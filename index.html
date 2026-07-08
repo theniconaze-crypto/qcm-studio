@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1a1f2e">
+<title>QCM Studio</title>
+<link rel="manifest" id="manifestLink">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1117;--surface:#1a1f2e;--surface2:#212840;--surface3:#2a3050;
+  --border:#2e3555;--border2:#3d4570;
+  --text:#e8eaf6;--text2:#9ea3c0;--text3:#5c6285;
+  --accent:#7c3aed;--accent-bg:#1e1535;--accent-light:#a78bfa;
+  --success:#22c55e;--success-bg:#0d2818;--success-light:#86efac;
+  --danger:#ef4444;--danger-bg:#2d1515;--danger-light:#fca5a5;
+  --warning:#f59e0b;--warning-bg:#2d1f0a;--warning-light:#fcd34d;
+  --pro:#8b5cf6;--pro-bg:#1c1535;--pro-light:#c4b5fd;
+  --radius:8px;
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
+
+/* Layout */
+.app{display:flex;flex-direction:column;min-height:100vh}
+.header{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+.logo{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-0.3px}
+.logo svg{width:20px;height:20px;color:var(--accent-light)}
+.header-right{display:flex;align-items:center;gap:10px}
+.badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:0.3px}
+.badge-admin{background:var(--pro-bg);color:var(--pro-light);border:1px solid #3d2d6b}
+.badge-user{background:var(--accent-bg);color:var(--accent-light);border:1px solid #3d2878}
+.offline-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px}
+.offline-label{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
+.main{flex:1;padding:24px 20px;max-width:860px;margin:0 auto;width:100%}
+
+/* Login */
+.login-hero{text-align:center;margin-bottom:32px;padding-top:24px}
+.login-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin-bottom:8px}
+.login-sub{color:var(--text2);font-size:14px}
+.login-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 20px;cursor:pointer;transition:border-color .15s,background .15s;text-align:center}
+.login-card:hover{border-color:var(--border2);background:var(--surface2)}
+.login-icon{width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:24px}
+.icon-admin{background:var(--pro-bg);border:1px solid #3d2d6b}
+.icon-user{background:var(--accent-bg);border:1px solid #3d2878}
+.login-card-title{font-size:15px;font-weight:600;margin-bottom:6px}
+.login-card-desc{font-size:12px;color:var(--text2);line-height:1.5}
+
+/* Password modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.7);display:flex;align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(2px)}
+.modal{background:var(--surface);border:1px solid var(--border2);border-radius:12px;padding:28px;width:340px;max-width:90vw}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.modal-sub{font-size:12px;color:var(--text2);margin-bottom:20px}
+.modal-error{font-size:12px;color:var(--danger-light);background:var(--danger-bg);padding:8px 12px;border-radius:6px;margin-bottom:12px;border:1px solid #4d1f1f}
+.pw-wrap{position:relative;margin-bottom:16px}
+.pw-wrap input{padding-right:40px}
+.pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--text3);padding:4px}
+.pw-toggle:hover{color:var(--text2)}
+.modal-btns{display:flex;gap:8px}
+
+/* Tabs */
+.tabs{display:flex;gap:4px;background:var(--surface);border-radius:var(--radius);padding:4px;margin-bottom:20px;border:1px solid var(--border)}
+.tab{flex:1;padding:8px;border-radius:6px;border:none;background:none;font-size:13px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:6px}
+.tab.active{background:var(--surface3);color:var(--text);font-weight:500;border:1px solid var(--border2)}
+.tab svg{width:15px;height:15px;flex-shrink:0}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:14px}
+.card-title{font-size:13px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:8px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.card-title svg{width:15px;height:15px}
+
+/* Form */
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:5px;font-weight:500}
+input[type=text],input[type=password],textarea,select{width:100%;padding:9px 12px;border:1px solid var(--border2);border-radius:var(--radius);background:var(--surface3);color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color .15s}
+input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{border-color:var(--accent)}
+textarea{resize:vertical;min-height:60px}
+
+/* Buttons */
+.btn{padding:8px 16px;border-radius:var(--radius);border:1px solid var(--border2);background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:6px;transition:background .12s,border-color .12s;font-weight:500}
+.btn:hover{background:var(--surface3)}
+.btn:active{transform:scale(.98)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
+.btn-primary:hover{background:#6d28d9;border-color:#6d28d9}
+.btn-danger{background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f}
+.btn-danger:hover{background:#3d1515}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-group{display:flex;gap:8px;flex-wrap:wrap}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* Questions */
+.q-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
+.q-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.q-num{font-size:11px;font-weight:600;color:var(--accent-light);background:var(--accent-bg);padding:2px 9px;border-radius:20px;border:1px solid #3d2878}
+.q-remove{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;line-height:1;transition:color .12s;display:flex;align-items:center}
+.q-remove:hover{color:var(--danger-light)}
+.q-remove svg{width:16px;height:16px}
+.options-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.option-row{display:flex;align-items:center;gap:7px}
+.opt-letter{font-size:11px;font-weight:700;color:var(--text3);min-width:14px}
+.option-row input[type=text]{flex:1;font-size:12px;padding:6px 10px}
+.correct-radio{accent-color:var(--success);width:15px;height:15px;cursor:pointer;flex-shrink:0}
+
+/* Progress */
+.progress-wrap{margin-bottom:18px}
+.progress-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-bottom:6px}
+.progress-bar{height:5px;background:var(--surface3);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-light));border-radius:3px;transition:width .35s ease}
+
+/* Quiz */
+.quiz-q{font-size:15px;font-weight:500;margin-bottom:16px;line-height:1.55;color:var(--text)}
+.quiz-opts{display:flex;flex-direction:column;gap:8px}
+.quiz-opt{padding:12px 16px;border:1px solid var(--border2);border-radius:8px;cursor:pointer;font-size:13px;display:flex;align-items:center;gap:10px;transition:all .12s;background:var(--surface2)}
+.quiz-opt:hover:not(.locked){border-color:var(--accent);background:var(--accent-bg)}
+.quiz-opt.selected{border-color:var(--accent);background:var(--accent-bg)}
+.quiz-opt.correct{border-color:var(--success);background:var(--success-bg)}
+.quiz-opt.wrong{border-color:var(--danger);background:var(--danger-bg)}
+.quiz-opt.locked{cursor:default}
+.opt-circle{width:26px;height:26px;border-radius:50%;border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;color:var(--text2)}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat-card{background:var(--surface2);border-radius:var(--radius);padding:16px;text-align:center;border:1px solid var(--border)}
+.stat-val{font-size:26px;font-weight:700;line-height:1;margin-bottom:4px;letter-spacing:-0.5px}
+.stat-lbl{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.c-blue{color:var(--accent-light)}
+.c-green{color:var(--success-light)}
+.c-amber{color:var(--warning-light)}
+
+/* Correction */
+.corr-item{background:var(--surface2);border-radius:8px;padding:14px;margin-bottom:8px;border:1px solid var(--border)}
+.corr-q{font-size:13px;font-weight:600;margin-bottom:8px}
+.corr-ans{font-size:12px;display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:6px;margin-bottom:4px}
+.corr-ok{background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30}
+.corr-no{background:var(--surface3);color:var(--text2);border:1px solid var(--border)}
+.corr-ans svg{width:13px;height:13px;flex-shrink:0}
+
+/* Attempt row */
+.attempt-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--surface2);border-radius:8px;margin-bottom:6px;border:1px solid var(--border);font-size:13px;gap:10px;flex-wrap:wrap}
+.attempt-score{font-weight:700}
+
+/* AI */
+.ai-section{background:var(--pro-bg);border:1px solid #3d2d6b;border-radius:8px;padding:14px;margin-bottom:14px}
+.ai-section label{color:var(--pro-light)}
+.ai-row{display:flex;gap:8px;margin-top:8px}
+.ai-row input{flex:1}
+.ai-loader{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--accent-bg);border-radius:6px;font-size:12px;color:var(--accent-light);margin-top:8px;border:1px solid #3d2878}
+.spinner{width:14px;height:14px;border:2px solid var(--accent-light);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Result */
+.result-circle{width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700}
+
+/* Empty */
+.empty{text-align:center;padding:40px 20px;color:var(--text3);font-size:13px}
+.empty svg{width:40px;height:40px;margin:0 auto 12px;display:block;opacity:.4}
+
+/* API key badge */
+.apikey-btn{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;transition:background .12s}
+.apikey-btn:hover{background:var(--surface3)}
+.apikey-btn.configured{border-color:#1a4d30;background:var(--success-bg);color:var(--success-light)}
+.apikey-btn svg{width:12px;height:12px}
+
+/* Choice cards (modal step 2) */
+.choice-card{display:flex;align-items:flex-start;gap:14px;padding:14px;border:1px solid var(--border2);border-radius:10px;cursor:pointer;margin-bottom:10px;transition:border-color .15s,background .15s;background:var(--surface2)}
+.choice-card:hover{border-color:var(--border-accent,var(--accent));background:var(--surface3)}
+.choice-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+
+/* Detail modal */
+.detail-q{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin-bottom:10px}
+.detail-q-text{font-size:13px;font-weight:600;margin-bottom:10px;line-height:1.5}
+.detail-opt{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;font-size:12px;margin-bottom:4px;border:1px solid transparent}
+.detail-opt-correct{background:var(--success-bg);border-color:#1a4d30;color:var(--success-light)}
+.detail-opt-wrong{background:var(--danger-bg);border-color:#4d1f1f;color:var(--danger-light)}
+.detail-opt-neutral{background:var(--surface3);color:var(--text2)}
+.detail-opt-letter{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;border:1px solid currentColor;opacity:.7}
+.detail-score-bar{height:8px;border-radius:4px;background:var(--surface3);overflow:hidden;margin-top:6px}
+.detail-score-fill{height:100%;border-radius:4px;transition:width .4s ease}
+
+/* Cloud sync button */
+.cloud-btn{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .12s}
+.cloud-btn:hover{background:var(--surface3)}
+.cloud-btn.synced{border-color:#1a4d30;background:var(--success-bg);color:var(--success-light)}
+.cloud-btn.syncing{border-color:#1a3d6b;background:#0d1f3a;color:#93c5fd;animation:pulse .8s ease-in-out infinite alternate}
+.cloud-btn.error{border-color:#4d1f1f;background:var(--danger-bg);color:var(--danger-light)}
+.cloud-btn svg{width:12px;height:12px}
+@keyframes pulse{from{opacity:.7}to{opacity:1}}
+
+/* Misc */
+.hidden{display:none!important}
+.sep{height:1px;background:var(--border);margin:16px 0}
+.tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;letter-spacing:.3px}
+.tag-ok{background:var(--success-bg);color:var(--success-light)}
+.tag-warn{background:var(--warning-bg);color:var(--warning-light)}
+.tag-bad{background:var(--danger-bg);color:var(--danger-light)}
+.section-head{margin-bottom:20px}
+.section-head h2{font-size:18px;font-weight:700;letter-spacing:-0.3px;margin-bottom:4px}
+.section-head p{font-size:12px;color:var(--text2)}
+.toast{position:fixed;bottom:24px;right:20px;background:var(--success-bg);border:1px solid var(--success);color:var(--success-light);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;z-index:200;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast svg{width:15px;height:15px}
+@media(max-width:600px){
+  .login-wrap{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:1fr 1fr}
+  .options-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
+    </svg>
+    QCM Studio
+  </div>
+  <div class="header-right">
+    <div class="offline-label" id="offlineLabel" style="display:none">
+      <span class="offline-dot"></span> Hors ligne
+    </div>
+    <button class="cloud-btn hidden" id="cloudBtn" onclick="openCloudModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      <span id="cloudBtnLabel">Sync cloud</span>
+    </button>
+    <button class="apikey-btn hidden" id="apiKeyBtn" onclick="openApiModal()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      <span id="apiKeyLabel">Clé API</span>
+    </button>
+    <span id="headerBadge" class="hidden"></span>
+    <button class="btn btn-sm hidden" id="logoutBtn" onclick="logout()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Déconnexion
+    </button>
+  </div>
+</div>
+
+<div class="main">
+
+<!-- LOGIN -->
+<div id="viewLogin">
+  <div class="login-hero">
+    <div class="login-title">QCM Studio</div>
+    <div class="login-sub">Créez, partagez et répondez à des questionnaires interactifs</div>
+  </div>
+  <div class="login-wrap">
+    <div class="login-card" onclick="openPasswordModal()">
+      <div class="login-icon icon-admin">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div class="login-card-title">Administrateur</div>
+      <div class="login-card-desc">Créer et configurer des QCM, consulter les statistiques et les corrigés. Accès protégé par mot de passe.</div>
+    </div>
+    <div class="login-card" onclick="login('user')">
+      <div class="login-icon icon-user">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      </div>
+      <div class="login-card-title">Utilisateur</div>
+      <div class="login-card-desc">Répondre aux QCM disponibles et consulter vos résultats. Accès libre.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLOUD MODAL -->
+<div id="cloudModal" class="modal-overlay hidden">
+  <div class="modal" onclick="event.stopPropagation()" style="width:460px">
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+      Stockage cloud partagé
+    </div>
+    <div class="modal-sub">Vos QCM seront accessibles depuis n'importe quel appareil ou navigateur. Utilise <strong style="color:var(--text)">JSONBin.io</strong> — gratuit, sans inscription requise.</div>
+
+    <div style="background:var(--surface3);border-radius:var(--radius);padding:12px;margin-bottom:14px;font-size:12px;line-height:1.8;color:var(--text2)">
+      <div style="font-weight:600;color:var(--text);margin-bottom:6px">⚡ Comment configurer (1 minute) :</div>
+      <div>1. Allez sur <strong style="color:var(--accent-light)">jsonbin.io</strong> → <em>Sign up</em> (gratuit)</div>
+      <div>2. Dashboard → <em>API Keys</em> → copiez votre <strong>Master Key</strong> (<code style="background:var(--surface2);padding:1px 5px;border-radius:3px">$2a$…</code>)</div>
+      <div>3. Collez-la ci-dessous et cliquez <em>Connecter</em> — un espace de stockage sera créé automatiquement</div>
+    </div>
+
+    <div style="margin-bottom:12px">
+      <label>Clé Master JSONBin <span style="color:var(--text3);font-weight:400">(commence par <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">$2a$</code>)</span></label>
+      <div class="pw-wrap" style="margin-bottom:6px">
+        <input type="password" id="jsonbinKeyInput" placeholder="$2a$10$…" style="font-family:monospace;font-size:12px" onkeydown="if(event.key==='Enter')connectCloud()">
+        <button class="pw-toggle" onclick="toggleField('jsonbinKeyInput')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label>ID du bin <span style="color:var(--text3);font-weight:400">(rempli automatiquement à la première connexion)</span></label>
+      <input type="text" id="jsonbinIdInput" placeholder="Laissez vide pour créer automatiquement" style="font-family:monospace;font-size:12px">
+    </div>
+
+    <div id="cloudError" class="modal-error hidden" style="margin-bottom:10px"></div>
+    <div id="cloudSuccess" style="font-size:12px;color:var(--success-light);background:var(--success-bg);border:1px solid #1a4d30;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:none">
+      ✓ <span id="cloudSuccessMsg"></span>
+    </div>
+
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="connectCloud()" style="flex:1" id="cloudConnectBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
+        Connecter
+      </button>
+      <button class="btn" onclick="closeCloudModal()">Fermer</button>
+      <button class="btn btn-danger btn-sm" id="cloudDisconnectBtn" style="display:none" onclick="disconnectCloud()">Déconnecter</button>
+    </div>
+  </div>
+</div>
+
+<!-- PASSWORD MODAL -->
+<div id="pwModal" class="modal-overlay hidden">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--pro-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Accès administrateur
+    </div>
+    <div class="modal-sub">Saisissez le mot de passe pour continuer.</div>
+    <div id="pwError" class="modal-error hidden">Mot de passe incorrect. Réessayez.</div>
+    <div class="pw-wrap">
+      <input type="password" id="pwInput" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkPassword()">
+      <button class="pw-toggle" onclick="togglePw()" title="Afficher/masquer">
+        <svg id="eyeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="modal-btns">
+      <button class="btn btn-primary" onclick="checkPassword()" style="flex:1">Connexion</button>
+      <button class="btn" onclick="closePwModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- API KEY MODAL -->
+<div id="apiModal" class="modal-overlay hidden">
+  <div class="modal" onclick="event.stopPropagation()" style="width:440px">
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+      Configurer l'IA
+    </div>
+    <div class="modal-sub">Choisissez votre fournisseur IA et saisissez votre clé. Elle est stockée uniquement dans votre navigateur et n'est jamais partagée.</div>
+
+    <!-- Provider selector -->
+    <div style="display:flex;gap:6px;margin-bottom:16px;background:var(--surface3);border-radius:var(--radius);padding:4px">
+      <button id="provBtn-openai" onclick="selectProvider('openai')"
+        style="flex:1;padding:7px;border-radius:6px;border:1px solid var(--border2);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:var(--surface);color:var(--text)">
+        OpenAI
+      </button>
+      <button id="provBtn-gemini" onclick="selectProvider('gemini')"
+        style="flex:1;padding:7px;border-radius:6px;border:1px solid transparent;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s;background:none;color:var(--text2)">
+        Google Gemini
+      </button>
+    </div>
+
+    <!-- OpenAI panel -->
+    <div id="panel-openai">
+      <label>Clé API OpenAI <span style="color:var(--text3);font-weight:400">(commence par <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">sk-</code>)</span></label>
+      <div class="pw-wrap" style="margin-bottom:8px">
+        <input type="password" id="keyInput-openai" placeholder="sk-proj-…" style="font-family:monospace;font-size:12px" onkeydown="if(event.key==='Enter')saveApiKey()">
+        <button class="pw-toggle" onclick="toggleField('keyInput-openai')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.7">
+        Obtenez votre clé sur <strong style="color:var(--accent-light)">platform.openai.com</strong> → API keys → Create new secret key.<br>
+        Modèle utilisé : <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">gpt-4o-mini</code>
+      </div>
+    </div>
+
+    <!-- Gemini panel -->
+    <div id="panel-gemini" style="display:none">
+      <label>Clé API Gemini <span style="color:var(--text3);font-weight:400">(commence par <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">AIza</code> ou <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">AQ</code>)</span></label>
+      <div class="pw-wrap" style="margin-bottom:8px">
+        <input type="password" id="keyInput-gemini" placeholder="AIzaSy… ou AQe…" style="font-family:monospace;font-size:12px" onkeydown="if(event.key==='Enter')saveApiKey()">
+        <button class="pw-toggle" onclick="toggleField('keyInput-gemini')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div style="font-size:11px;color:var(--text3);line-height:1.7">
+        Clé <strong style="color:var(--success-light)">gratuite</strong> sur <strong style="color:var(--accent-light)">aistudio.google.com</strong> → Get API key.<br>
+        Modèle utilisé : <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">gemini-2.5-flash</code>
+      </div>
+    </div>
+
+    <div id="apiKeyError" class="modal-error hidden" style="margin-top:10px"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="saveApiKey()" style="flex:1">Enregistrer</button>
+      <button class="btn" onclick="closeApiModal()">Annuler</button>
+      <button class="btn btn-danger btn-sm" onclick="clearApiKey()" id="apiClearBtn" style="display:none">Supprimer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="viewAdmin" class="hidden">
+  <div class="tabs">
+    <button class="tab active" id="tabCreate" onclick="adminTab('create')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Créer
+    </button>
+    <button class="tab" id="tabStats" onclick="adminTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Statistiques
+    </button>
+    <button class="tab" id="tabCorrige" onclick="adminTab('corrige')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Corrigés
+    </button>
+    <button class="tab" id="tabManage" onclick="adminTab('manage')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      Gérer
+    </button>
+  </div>
+
+  <!-- CREATE -->
+  <div id="adminCreate">
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Informations du QCM
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div><label>Titre</label><input type="text" id="qcmTitle" placeholder="Ex: Révolution française — Niveau lycée"></div>
+        <div><label>Durée (min, optionnel)</label><input type="text" id="qcmDuration" placeholder="Ex: 15"></div>
+      </div>
+      <div style="margin-top:12px"><label>Description</label><textarea id="qcmDesc" placeholder="Décrivez le sujet de ce QCM…" style="min-height:48px"></textarea></div>
+    </div>
+
+    <div class="ai-section">
+      <label>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:middle;margin-right:4px"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Générer des questions avec l'IA
+      </label>
+      <div id="aiNoKey" style="margin-top:8px;font-size:12px;color:var(--text2);display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--warning-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Une clé IA est requise pour générer des questions automatiquement.
+        <button class="btn btn-sm" onclick="openApiModal()" style="font-size:11px;padding:3px 10px">Configurer →</button>
+      </div>
+      <div id="aiWithKey" class="hidden">
+        <div class="ai-row">
+          <input type="text" id="aiPrompt" placeholder="Ex: 5 questions de géographie sur l'Europe, niveau collège" onkeydown="if(event.key==='Enter')generateWithAI()">
+          <button class="btn btn-sm" style="background:var(--pro);color:#fff;border-color:var(--pro);white-space:nowrap" onclick="generateWithAI()">Générer</button>
+        </div>
+        <div id="aiStatus" class="ai-loader hidden"><div class="spinner"></div> L'IA génère vos questions…</div>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-weight:600;font-size:14px">Questions <span id="qCount" style="font-size:12px;color:var(--text2);font-weight:400">(0/20)</span></div>
+      <button class="btn btn-sm" onclick="addQuestion()" id="addQBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Ajouter
+      </button>
+    </div>
+    <div id="questionsList"></div>
+    <div class="btn-group" style="margin-top:14px">
+      <button class="btn btn-primary" onclick="saveQCM()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Enregistrer le QCM
+      </button>
+      <button class="btn" onclick="resetForm()">Réinitialiser</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div id="adminStats" class="hidden">
+    <div class="section-head"><h2>Statistiques</h2><p>Résultats de toutes les tentatives</p></div>
+    <div id="statsContent"></div>
+  </div>
+
+  <!-- CORRIGE -->
+  <div id="adminCorrige" class="hidden">
+    <div class="section-head"><h2>Corrigés</h2><p>Réponses correctes par QCM</p></div>
+    <div id="corrigeContent"></div>
+  </div>
+
+  <!-- MANAGE -->
+  <div id="adminManage" class="hidden">
+    <div class="section-head"><h2>Gérer les QCM</h2><p>Supprimer les QCM existants</p></div>
+    <div id="manageContent"></div>
+  </div>
+</div>
+
+<!-- USER -->
+<div id="viewUser" class="hidden">
+  <div class="tabs">
+    <button class="tab active" id="tabQuiz" onclick="userTab('quiz')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      QCM disponibles
+    </button>
+    <button class="tab" id="tabHistory" onclick="userTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Mes résultats
+    </button>
+  </div>
+  <div id="userQuiz"><div id="quizList"></div></div>
+  <div id="userHistory" class="hidden">
+    <div class="section-head"><h2>Mes résultats</h2><p>Historique de vos tentatives</p></div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- Modale nom d'utilisateur -->
+  <div id="usernameModal" class="modal-overlay hidden">
+    <div class="modal" onclick="event.stopPropagation()" style="width:420px">
+
+      <!-- Étape 1 : saisie du nom -->
+      <div id="usernameStep1">
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Avant de commencer
+        </div>
+        <div class="modal-sub" id="usernameModalSub">Saisissez votre prénom ou pseudo pour identifier vos résultats.</div>
+        <div style="margin-bottom:16px">
+          <label>Nom du candidat</label>
+          <input type="text" id="usernameInput" placeholder="Ex: Marie, Jean-Pierre…" maxlength="40"
+            onkeydown="if(event.key==='Enter')goToStep2()"
+            oninput="$('usernameError').classList.add('hidden')">
+        </div>
+        <div id="usernameError" class="modal-error hidden">Veuillez saisir un nom pour continuer.</div>
+        <div class="modal-btns">
+          <button class="btn btn-primary" onclick="goToStep2()" style="flex:1">
+            Continuer →
+          </button>
+          <button class="btn" onclick="hide('usernameModal')">Annuler</button>
+        </div>
+      </div>
+
+      <!-- Étape 2 : choix du mode -->
+      <div id="usernameStep2" style="display:none">
+        <div class="modal-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Comment souhaitez-vous passer le test ?
+        </div>
+        <div id="step2Name" style="font-size:12px;color:var(--text2);margin-bottom:16px;display:flex;align-items:center;gap:5px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          Candidat : <strong id="step2NameLabel"></strong>
+          <button onclick="$('usernameStep2').style.display='none';$('usernameStep1').style.display='block'" style="background:none;border:none;color:var(--accent-light);font-size:11px;cursor:pointer;margin-left:4px">Modifier</button>
+        </div>
+
+        <!-- Option 1 -->
+        <div class="choice-card" onclick="chooseLaunch()" id="choiceLocal">
+          <div class="choice-icon" style="background:var(--accent-bg);border:1px solid #3d2878">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:3px">Lancer maintenant</div>
+            <div style="font-size:12px;color:var(--text2)">Le test s'ouvre sur cet appareil. Les résultats sont enregistrés localement et dans le cloud.</div>
+          </div>
+        </div>
+
+        <!-- Option 2 -->
+        <div class="choice-card" onclick="chooseLink()" id="choiceRemote" style="margin-bottom:0">
+          <div class="choice-icon" style="background:var(--pro-bg);border:1px solid #3d2d6b">
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--pro-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:14px;margin-bottom:3px">Générer un lien</div>
+            <div style="font-size:12px;color:var(--text2)">Crée un lien unique à envoyer. La personne passe le test sur son appareil et les résultats arrivent automatiquement.</div>
+          </div>
+          <div id="noCloudWarning" style="display:none;font-size:11px;color:var(--warning-light);background:var(--warning-bg);padding:6px 10px;border-radius:6px;margin-top:8px;border:1px solid #4d3a0a">
+            ⚠ JSONBin non configuré — les résultats distants ne pourront pas être récupérés.
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modale lien généré -->
+  <div id="linkModal" class="modal-overlay hidden" onclick="if(event.target===this)hide('linkModal')">
+    <div class="modal" onclick="event.stopPropagation()" style="width:460px">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--pro-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        Lien de test généré
+      </div>
+      <div id="linkModalMeta" style="font-size:12px;color:var(--text2);margin-bottom:14px"></div>
+      <div style="margin-bottom:14px">
+        <label>Lien à envoyer au candidat</label>
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <input type="text" id="generatedLink" readonly style="flex:1;font-size:11px;font-family:monospace;background:var(--surface3);cursor:text">
+          <button class="btn btn-sm" onclick="copyLink()" id="copyLinkBtn" style="flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copier
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:6px">
+          ⚠ Ce lien contient votre clé JSONBin. Ne le partagez qu'avec la personne concernée et via un canal privé.
+        </div>
+      </div>
+      <div style="background:var(--success-bg);border:1px solid #1a4d30;border-radius:8px;padding:12px;font-size:12px;color:var(--success-light);line-height:1.7">
+        <strong>Comment ça marche :</strong><br>
+        1. Copiez et envoyez ce lien au candidat<br>
+        2. Il ouvre le lien et passe le test sur son appareil<br>
+        3. À la fin, les résultats sont automatiquement envoyés dans votre JSONBin<br>
+        4. Rechargez les statistiques pour les voir apparaître
+      </div>
+      <div class="modal-btns" style="margin-top:16px">
+        <button class="btn" onclick="hide('linkModal')" style="flex:1">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="quizTaking" class="hidden">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span id="progressLabel">Question 1 / 5</span>
+        <span id="timerLabel" class="hidden" style="color:var(--accent-light);font-weight:700;font-variant-numeric:tabular-nums"></span>
+      </div>
+      <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:5px">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="quizUserLabel"></span>
+    </div>
+    <div class="card">
+      <div class="quiz-q" id="quizQ"></div>
+      <div class="quiz-opts" id="quizOpts"></div>
+    </div>
+    <div class="btn-group" style="margin-top:12px">
+      <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Suivant →</button>
+    </div>
+  </div>
+  <div id="quizResult" class="hidden">
+    <div class="card" style="text-align:center;padding:36px 20px">
+      <div class="result-circle" id="resultCircle"></div>
+      <div style="font-size:20px;font-weight:700;margin-bottom:8px;letter-spacing:-0.3px" id="resultTitle"></div>
+      <div style="font-size:13px;color:var(--text2);margin-bottom:24px" id="resultSub"></div>
+      <div class="btn-group" style="justify-content:center">
+        <button class="btn btn-primary" onclick="backToList()">← Retour aux QCM</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div id="detailModal" class="modal-overlay hidden" onclick="if(event.target===this)hide('detailModal')">
+  <div class="modal" style="width:560px;max-height:80vh;display:flex;flex-direction:column" onclick="event.stopPropagation()">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:4px">
+      <div>
+        <div class="modal-title" id="detailTitle" style="margin-bottom:2px"></div>
+        <div id="detailMeta" style="font-size:12px;color:var(--text2)"></div>
+      </div>
+      <button class="btn btn-sm" onclick="hide('detailModal')" style="flex-shrink:0;padding:4px 8px">✕</button>
+    </div>
+    <div id="detailScore" style="margin:12px 0 14px"></div>
+    <div id="detailBody" style="overflow-y:auto;flex:1;padding-right:4px"></div>
+  </div>
+</div>
+
+</div><!-- /main -->
+</div><!-- /app -->
+
+<!-- TOAST -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ─── UI helpers (en premier — utilisés partout dans le script) ───────────────
+const $ = id => document.getElementById(id);
+const show = id => $(id).classList.remove('hidden');
+const hide = id => $(id).classList.add('hidden');
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const ADMIN_PASSWORD = 'totototo';
+
+// ─── State ───────────────────────────────────────────────────────────────────
+let role = null, questions = [], currentQCM = null;
+let currentQIdx = 0, userAnswers = [], timerInterval = null, timeLeft = 0;
+let currentUsername = '';
+
+// ─── Storage — Cloud (JSONBin) + localStorage fallback ────────────────────────
+const KEY_QCMS     = 'qcm_studio_v2_qcms';
+const KEY_ATTEMPTS = 'qcm_studio_v2_attempts';
+const KEY_JB_KEY   = 'qcm_jsonbin_masterkey';
+const KEY_JB_BIN   = 'qcm_jsonbin_binid';
+const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+
+function getJBConfig() {
+  return {
+    masterKey: localStorage.getItem(KEY_JB_KEY) || '',
+    binId:     localStorage.getItem(KEY_JB_BIN) || ''
+  };
+}
+function isCloudEnabled() { const c = getJBConfig(); return !!(c.masterKey && c.binId); }
+
+// Local helpers (toujours utilisés comme cache)
+const localGetQCMs     = () => { try { return JSON.parse(localStorage.getItem(KEY_QCMS)||'[]'); } catch(e){ return []; }};
+const localGetAttempts = () => { try { return JSON.parse(localStorage.getItem(KEY_ATTEMPTS)||'[]'); } catch(e){ return []; }};
+const localSaveQCMs    = a => localStorage.setItem(KEY_QCMS, JSON.stringify(a));
+const localSaveAttempts= a => localStorage.setItem(KEY_ATTEMPTS, JSON.stringify(a));
+
+// Cloud R/W
+async function cloudRead() {
+  const { masterKey, binId } = getJBConfig();
+  const res = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
+    headers: { 'X-Master-Key': masterKey }
+  });
+  if (!res.ok) throw new Error(`Lecture cloud échouée (${res.status})`);
+  const data = await res.json();
+  return data.record; // { qcms: [], attempts: [] }
+}
+
+async function cloudWrite(record) {
+  const { masterKey, binId } = getJBConfig();
+  const res = await fetch(`${JSONBIN_BASE}/b/${binId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'X-Master-Key': masterKey },
+    body: JSON.stringify(record)
+  });
+  if (!res.ok) throw new Error(`Écriture cloud échouée (${res.status})`);
+}
+
+// Sync cloud → localStorage
+async function syncFromCloud() {
+  if (!isCloudEnabled()) return;
+  setCloudStatus('syncing', 'Sync…');
+  try {
+    const record = await cloudRead();
+    if (record?.qcms)     localSaveQCMs(record.qcms);
+    if (record?.attempts) localSaveAttempts(record.attempts);
+    setCloudStatus('synced', 'Cloud ✓');
+  } catch(e) {
+    console.warn('Sync cloud échouée, mode local', e);
+    setCloudStatus('error', 'Hors ligne');
+  }
+}
+
+// Push localStorage → cloud
+async function pushToCloud() {
+  if (!isCloudEnabled()) return;
+  setCloudStatus('syncing', 'Sauvegarde…');
+  try {
+    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts() });
+    setCloudStatus('synced', 'Cloud ✓');
+  } catch(e) {
+    console.warn('Push cloud échoué', e);
+    setCloudStatus('error', 'Erreur sync');
+  }
+}
+
+function setCloudStatus(state, label) {
+  const btn = $('cloudBtn'), lbl = $('cloudBtnLabel');
+  btn.className = 'cloud-btn ' + state;
+  lbl.textContent = label;
+}
+
+// Wrappers publics utilisés dans tout le reste du code
+const getQCMs     = () => localGetQCMs();
+const getAttempts = () => localGetAttempts();
+async function saveQCMs(a)     { localSaveQCMs(a);     await pushToCloud(); }
+async function saveAttempts(a) { localSaveAttempts(a); await pushToCloud(); }
+
+function showToast(msg) {
+  const t = $('toast');
+  t.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> ${msg}`;
+  t.classList.remove('hidden');
+  setTimeout(() => t.classList.add('hidden'), 2800);
+}
+
+// ─── Cloud modal ──────────────────────────────────────────────────────────────
+function openCloudModal() {
+  const { masterKey, binId } = getJBConfig();
+  $('jsonbinKeyInput').value = masterKey;
+  $('jsonbinIdInput').value  = binId;
+  hide('cloudError');
+  $('cloudSuccess').style.display = 'none';
+  $('cloudDisconnectBtn').style.display = isCloudEnabled() ? 'inline-flex' : 'none';
+  show('cloudModal');
+  setTimeout(() => $('jsonbinKeyInput').focus(), 80);
+}
+function closeCloudModal() { hide('cloudModal'); }
+$('cloudModal').addEventListener('click', e => { if (e.target === $('cloudModal')) closeCloudModal(); });
+
+async function connectCloud() {
+  const masterKey = $('jsonbinKeyInput').value.trim();
+  const binIdInput = $('jsonbinIdInput').value.trim();
+  hide('cloudError'); $('cloudSuccess').style.display = 'none';
+
+  if (!masterKey.startsWith('$2a$')) {
+    show('cloudError'); $('cloudError').textContent = 'La clé Master JSONBin doit commencer par "$2a$".';
+    return;
+  }
+
+  $('cloudConnectBtn').disabled = true;
+  $('cloudConnectBtn').textContent = 'Connexion…';
+
+  try {
+    let binId = binIdInput;
+
+    if (!binId) {
+      // Créer un nouveau bin
+      const res = await fetch(`${JSONBIN_BASE}/b`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Master-Key': masterKey,
+          'X-Bin-Name': 'QCM Studio',
+          'X-Bin-Private': 'true'
+        },
+        body: JSON.stringify({ qcms: localGetQCMs(), attempts: localGetAttempts() })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(()=>({}));
+        throw new Error(err.message || `Erreur ${res.status} — vérifiez votre clé Master`);
+      }
+      const data = await res.json();
+      binId = data.metadata.id;
+      $('jsonbinIdInput').value = binId;
+      $('cloudSuccessMsg').textContent = `Bin créé (ID: ${binId}). Vos données locales ont été importées.`;
+    } else {
+      // Vérifier l'accès au bin existant
+      const res = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
+        headers: { 'X-Master-Key': masterKey }
+      });
+      if (!res.ok) throw new Error(`Bin introuvable ou accès refusé (${res.status})`);
+      const data = await res.json();
+      // Importer les données cloud en local
+      if (data.record?.qcms)     localSaveQCMs(data.record.qcms);
+      if (data.record?.attempts) localSaveAttempts(data.record.attempts);
+      $('cloudSuccessMsg').textContent = `Connecté au bin ${binId}. Données cloud importées.`;
+    }
+
+    localStorage.setItem(KEY_JB_KEY, masterKey);
+    localStorage.setItem(KEY_JB_BIN, binId);
+    $('cloudSuccess').style.display = 'block';
+    $('cloudDisconnectBtn').style.display = 'inline-flex';
+    setCloudStatus('synced', 'Cloud ✓');
+
+  } catch(e) {
+    show('cloudError'); $('cloudError').textContent = e.message;
+  } finally {
+    $('cloudConnectBtn').disabled = false;
+    $('cloudConnectBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Connecter`;
+  }
+}
+
+function disconnectCloud() {
+  if (!confirm('Déconnecter le cloud ? Les données restent en local.')) return;
+  localStorage.removeItem(KEY_JB_KEY);
+  localStorage.removeItem(KEY_JB_BIN);
+  hide('cloudModal');
+  $('cloudDisconnectBtn').style.display = 'none';
+  setCloudStatus('', 'Sync cloud');
+  showToast('Cloud déconnecté — mode local activé.');
+}
+
+
+function openPasswordModal() {
+  $('pwInput').value = '';
+  hide('pwError');
+  show('pwModal');
+  setTimeout(() => $('pwInput').focus(), 80);
+}
+function closePwModal() { hide('pwModal'); }
+function togglePw() {
+  const inp = $('pwInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function checkPassword() {
+  if ($('pwInput').value === ADMIN_PASSWORD) {
+    hide('pwModal');
+    login('admin');
+  } else {
+    show('pwError');
+    $('pwInput').value = '';
+    $('pwInput').focus();
+  }
+}
+$('pwModal').addEventListener('click', e => { if (e.target === $('pwModal')) closePwModal(); });
+
+// ─── Login / logout ───────────────────────────────────────────────────────────
+function login(r) {
+  role = r;
+  hide('viewLogin');
+  const badge = $('headerBadge');
+  badge.textContent = r === 'admin' ? 'Administrateur' : 'Utilisateur';
+  badge.className = 'badge ' + (r === 'admin' ? 'badge-admin' : 'badge-user');
+  badge.classList.remove('hidden');
+  show('logoutBtn');
+  if (r === 'admin') {
+    show('viewAdmin'); adminTab('create');
+    show('apiKeyBtn'); updateApiKeyUI();
+    show('cloudBtn');
+    if (isCloudEnabled()) { setCloudStatus('synced','Cloud ✓'); syncFromCloud().then(()=>{ adminTab('create'); }); }
+    else setCloudStatus('','Sync cloud');
+  }
+  else { show('viewUser'); hide('apiKeyBtn'); hide('cloudBtn'); userTab('quiz'); if (isCloudEnabled()) syncFromCloud().then(()=>renderQuizList()); }
+}
+function logout() {
+  role = null; questions = []; currentQCM = null;
+  clearInterval(timerInterval);
+  ['viewAdmin','viewUser','logoutBtn','headerBadge','apiKeyBtn','cloudBtn'].forEach(hide);
+  show('viewLogin');
+  resetForm();
+}
+
+// ─── Admin tabs ───────────────────────────────────────────────────────────────
+function adminTab(t) {
+  ['create','stats','corrige','manage'].forEach(x => {
+    $('admin'+cap(x)).classList.add('hidden');
+    $('tab'+cap(x)).classList.remove('active');
+  });
+  show('admin'+cap(t));
+  $('tab'+cap(t)).classList.add('active');
+  if (t==='stats') renderStats();
+  if (t==='corrige') renderCorrige();
+  if (t==='manage') renderManage();
+}
+const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
+
+// ─── Question builder ─────────────────────────────────────────────────────────
+function addQuestion(q) {
+  if (questions.length >= 20) return;
+  questions.push(q || { text:'', options:['','','',''], correct:0 });
+  renderQuestions();
+}
+function removeQuestion(i) { questions.splice(i,1); renderQuestions(); }
+
+function renderQuestions() {
+  $('qCount').textContent = `(${questions.length}/20)`;
+  $('addQBtn').disabled = questions.length >= 20;
+  const list = $('questionsList');
+  if (!questions.length) {
+    list.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      Aucune question. Ajoutez-en une ou utilisez la génération IA.</div>`;
+    return;
+  }
+  list.innerHTML = questions.map((q,i) => `
+    <div class="q-item">
+      <div class="q-header">
+        <span class="q-num">Q${i+1}</span>
+        <button class="q-remove" onclick="removeQuestion(${i})" title="Supprimer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+        </button>
+      </div>
+      <div style="margin-bottom:10px"><label>Question</label>
+        <textarea onchange="questions[${i}].text=this.value" placeholder="Saisissez la question…">${q.text}</textarea>
+      </div>
+      <div class="options-grid">
+        ${['A','B','C','D'].map((l,j) => `
+          <div class="option-row">
+            <span class="opt-letter">${l}</span>
+            <input type="text" value="${(q.options[j]||'').replace(/"/g,'&quot;')}" onchange="questions[${i}].options[${j}]=this.value" placeholder="Option ${l}">
+            <input type="radio" class="correct-radio" name="cr_${i}" ${q.correct===j?'checked':''} onchange="questions[${i}].correct=${j}" title="Bonne réponse">
+          </div>`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin-top:8px">● Cochez la bonne réponse</div>
+    </div>`).join('');
+}
+
+async function saveQCM() {
+  const title = $('qcmTitle').value.trim();
+  if (!title) { alert('Saisissez un titre.'); return; }
+  if (!questions.length) { alert('Ajoutez au moins une question.'); return; }
+  if (!questions.every(q => q.text.trim() && q.options.filter(o=>o.trim()).length >= 2)) {
+    alert('Chaque question doit avoir un texte et au moins 2 options.'); return;
+  }
+  const qcms = getQCMs();
+  qcms.push({
+    id: Date.now(), title, desc: $('qcmDesc').value,
+    duration: parseInt($('qcmDuration').value)||0,
+    questions: JSON.parse(JSON.stringify(questions)),
+    createdAt: new Date().toLocaleDateString('fr-FR')
+  });
+  saveQCMs(qcms);
+  showToast('QCM enregistré avec succès !');
+  resetForm();
+}
+
+function resetForm() {
+  questions = [];
+  ['qcmTitle','qcmDesc','qcmDuration','aiPrompt'].forEach(id => $(id).value='');
+  renderQuestions();
+}
+
+// ─── API Key management (multi-provider) ─────────────────────────────────────
+const PROVIDERS = {
+  openai: { key: 'qcm_openai_key', label: 'OpenAI', short: 'OpenAI ✓' },
+  gemini: { key: 'qcm_gemini_key', label: 'Gemini', short: 'Gemini ✓' }
+};
+let currentProvider = localStorage.getItem('qcm_provider') || 'openai';
+
+function getStoredKey(p) { return localStorage.getItem(PROVIDERS[p].key) || ''; }
+function getActiveKey()  { return getStoredKey(currentProvider); }
+
+function updateApiKeyUI() {
+  const key = getActiveKey();
+  const btn = $('apiKeyBtn'), lbl = $('apiKeyLabel');
+  if (key) {
+    btn.classList.add('configured');
+    const names = { openai: 'OpenAI ✓', gemini: 'Gemini ✓' };
+    lbl.textContent = names[currentProvider] || 'IA ✓';
+    hide('aiNoKey'); show('aiWithKey');
+  } else {
+    btn.classList.remove('configured');
+    lbl.textContent = 'Clé IA';
+    show('aiNoKey'); hide('aiWithKey');
+  }
+}
+
+function selectProvider(p) {
+  currentProvider = p;
+  localStorage.setItem('qcm_provider', p);
+  // Update tab styles
+  Object.keys(PROVIDERS).forEach(k => {
+    const btn = $('provBtn-' + k);
+    const isActive = k === p;
+    btn.style.background    = isActive ? 'var(--surface)' : 'none';
+    btn.style.color         = isActive ? 'var(--text)'    : 'var(--text2)';
+    btn.style.borderColor   = isActive ? 'var(--border2)' : 'transparent';
+    $('panel-' + k).style.display = isActive ? 'block' : 'none';
+  });
+  // Pre-fill field with saved key if any
+  const saved = getStoredKey(p);
+  $('keyInput-' + p).value = saved;
+  hide('apiKeyError');
+  $('apiClearBtn').style.display = saved ? 'inline-flex' : 'none';
+}
+
+function openApiModal() {
+  selectProvider(currentProvider);
+  show('apiModal');
+  setTimeout(() => $('keyInput-' + currentProvider).focus(), 80);
+}
+function closeApiModal() { hide('apiModal'); }
+
+function toggleField(id) {
+  const el = $(id);
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+function saveApiKey() {
+  const key = $('keyInput-' + currentProvider).value.trim();
+  hide('apiKeyError');
+
+  // Validate format per provider
+  if (currentProvider === 'openai' && !key.startsWith('sk-')) {
+    show('apiKeyError');
+    $('apiKeyError').textContent = 'Une clé OpenAI commence par "sk-".';
+    return;
+  }
+  if (currentProvider === 'gemini' && !key.startsWith('AIza') && !key.startsWith('AQ')) {
+    show('apiKeyError');
+    $('apiKeyError').textContent = 'Une clé Gemini commence par "AIza" ou "AQ".';
+    return;
+  }
+
+  localStorage.setItem(PROVIDERS[currentProvider].key, key);
+  hide('apiModal');
+  updateApiKeyUI();
+  showToast(`Clé ${PROVIDERS[currentProvider].label} enregistrée !`);
+}
+
+function clearApiKey() {
+  if (!confirm('Supprimer la clé enregistrée pour ' + PROVIDERS[currentProvider].label + ' ?')) return;
+  localStorage.removeItem(PROVIDERS[currentProvider].key);
+  $('keyInput-' + currentProvider).value = '';
+  $('apiClearBtn').style.display = 'none';
+  hide('apiModal');
+  updateApiKeyUI();
+  showToast('Clé supprimée.');
+}
+
+$('apiModal').addEventListener('click', e => { if (e.target === $('apiModal')) closeApiModal(); });
+
+// ─── AI generation (OpenAI + Gemini) ─────────────────────────────────────────
+const SYSTEM_PROMPT = `Tu es un expert en QCM pédagogiques. Réponds UNIQUEMENT avec un tableau JSON valide, sans texte ni balises Markdown.
+Format strict : [{"text":"Question ?","options":["Réponse A","Réponse B","Réponse C","Réponse D"],"correct":0}]
+"correct" est l'index (0, 1, 2 ou 3) de la bonne réponse. Génère des questions claires avec exactement 4 options chacune.`;
+
+async function generateWithAI() {
+  const prompt = $('aiPrompt').value.trim();
+  if (!prompt) { alert('Décrivez le type de questions à générer.'); return; }
+  const apiKey = getActiveKey();
+  if (!apiKey) { openApiModal(); return; }
+
+  show('aiStatus'); hide('apiKeyError');
+
+  try {
+    const userMsg = `Génère des questions de QCM pour : ${prompt}. Maximum ${20 - questions.length} questions. Réponds uniquement avec le JSON.`;
+    let raw = '';
+
+    if (currentProvider === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini', max_tokens: 1500, temperature: 0.7,
+          messages: [{ role: 'system', content: SYSTEM_PROMPT }, { role: 'user', content: userMsg }]
+        })
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 401) { show('apiKeyError'); $('apiKeyError').textContent = 'Clé OpenAI invalide ou expirée.'; openApiModal(); return; }
+        if (res.status === 429) throw new Error('Quota dépassé. Attendez et réessayez.');
+        throw new Error(err.error?.message || `Erreur ${res.status}`);
+      }
+      const data = await res.json();
+      raw = data.choices?.[0]?.message?.content || '';
+
+    } else if (currentProvider === 'gemini') {
+      const res = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 8192,
+              responseMimeType: 'application/json',
+              thinkingConfig: { thinkingBudget: 0 }
+            }
+          })
+        }
+      );
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        if (res.status === 400 || res.status === 403) { show('apiKeyError'); $('apiKeyError').textContent = 'Clé Gemini invalide ou non autorisée.'; openApiModal(); return; }
+        if (res.status === 429) throw new Error('Quota Gemini dépassé. Attendez et réessayez.');
+        throw new Error(err.error?.message || `Erreur ${res.status}`);
+      }
+      const data = await res.json();
+      // Gemini peut retourner plusieurs parts (thinking + response), on prend le dernier texte
+      const parts = data.candidates?.[0]?.content?.parts || [];
+      raw = parts.map(p => p.text || '').join('');
+    }
+
+    // Nettoyage robuste : extraire le tableau JSON même si entouré de texte
+    let clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    // Si le JSON est tronqué, tenter de le réparer en fermant le tableau
+    if (!clean.endsWith(']')) {
+      const lastComma = clean.lastIndexOf(',');
+      const lastBrace = clean.lastIndexOf('}');
+      if (lastBrace > lastComma) {
+        clean = clean.slice(0, lastBrace + 1) + ']';
+      } else if (lastComma > 0) {
+        clean = clean.slice(0, lastComma) + ']';
+      } else {
+        clean = clean + ']}]'.slice(clean.split('{').length - clean.split('}').length);
+      }
+    }
+    const parsed = JSON.parse(clean);
+    const arr = Array.isArray(parsed) ? parsed : [parsed];
+    const toAdd = Math.min(arr.length, 20 - questions.length);
+    for (let i = 0; i < toAdd; i++) {
+      const q = arr[i];
+      if (!q.text) continue;
+      questions.push({
+        text: String(q.text || ''),
+        options: Array.isArray(q.options) ? q.options.map(String) : ['','','',''],
+        correct: typeof q.correct === 'number' ? q.correct : 0
+      });
+    }
+    renderQuestions();
+    showToast(`${toAdd} question${toAdd > 1 ? 's' : ''} ajoutée${toAdd > 1 ? 's' : ''} via ${PROVIDERS[currentProvider].label} !`);
+  } catch(e) {
+    console.error(e);
+    alert('Erreur de génération : ' + e.message + '\n\nVérifiez votre clé et votre connexion.');
+  } finally {
+    hide('aiStatus');
+  }
+}
+
+// ─── Stats ────────────────────────────────────────────────────────────────────
+function openDetailAdmin(attemptIdx) {
+  // Dans les stats, les attempts ne sont pas inversés
+  const a = getAttempts()[attemptIdx];
+  if (!a) return;
+  // On réutilise openDetail en passant par un index dans la liste inversée
+  const reversed = getAttempts().slice().reverse();
+  const ri = reversed.findIndex((x, i) => getAttempts()[attemptIdx] === x || (x.qcmId===a.qcmId && x.date===a.date && x.userName===a.userName && x.score===a.score));
+  openDetail(ri >= 0 ? ri : 0);
+}
+
+function renderStats() {
+  const qcms = getQCMs(), attempts = getAttempts(), el = $('statsContent');
+  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Aucun QCM créé.</div>'; return; }
+  const total_att = attempts.length;
+  el.innerHTML = qcms.map(qcm => {
+    const att = attempts.map((a, globalIdx) => ({a, globalIdx})).filter(({a}) => a.qcmId === qcm.id);
+    const scores = att.map(({a}) => a.score);
+    const avg = att.length ? Math.round(scores.reduce((s,v)=>s+v,0)/att.length) : null;
+    const best = att.length ? Math.max(...scores) : null;
+    return `<div class="card"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${qcm.title}</div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-val c-blue">${att.length}</div><div class="stat-lbl">Tentatives</div></div>
+        <div class="stat-card"><div class="stat-val c-green">${avg!==null?avg+'%':'—'}</div><div class="stat-lbl">Score moyen</div></div>
+        <div class="stat-card"><div class="stat-val c-amber">${best!==null?best+'%':'—'}</div><div class="stat-lbl">Meilleur</div></div>
+      </div>
+      ${att.length ? att.map(({a, globalIdx}) => {
+        // Index dans la liste inversée (utilisé par openDetail)
+        const ri = total_att - 1 - globalIdx;
+        return `
+        <div class="attempt-row">
+          <span style="display:flex;align-items:center;gap:5px;font-weight:600">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            ${a.userName || 'Anonyme'}
+          </span>
+          <span style="color:var(--text3);font-size:12px">${a.date}</span>
+          <span class="attempt-score" style="color:${a.score>=70?'var(--success-light)':a.score>=40?'var(--warning-light)':'var(--danger-light)'}">${a.score}% (${a.correct}/${a.total})</span>
+          <span class="tag ${a.score>=70?'tag-ok':a.score>=40?'tag-warn':'tag-bad'}">${a.score>=70?'Réussi':a.score>=40?'Passable':'Échoué'}</span>
+          <button class="btn btn-sm" onclick="openDetail(${ri})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            Détail
+          </button>
+        </div>`;}).join('') : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Aucune tentative.</div>'}
+    </div>`;
+  }).join('');
+}
+
+// ─── Corrigés ─────────────────────────────────────────────────────────────────
+const corrigeState = {}; // { qcmId: { open: bool, questions: { i: bool } } }
+
+function toggleCorrigeQCM(qcmId) {
+  if (!corrigeState[qcmId]) corrigeState[qcmId] = { open: false, questions: {} };
+  corrigeState[qcmId].open = !corrigeState[qcmId].open;
+  renderCorrige();
+}
+
+function toggleCorrigeQ(qcmId, qi) {
+  if (!corrigeState[qcmId]) corrigeState[qcmId] = { open: true, questions: {} };
+  corrigeState[qcmId].questions[qi] = !corrigeState[qcmId].questions[qi];
+  renderCorrige();
+}
+
+function expandAllCorrige(qcmId, total) {
+  if (!corrigeState[qcmId]) corrigeState[qcmId] = { open: true, questions: {} };
+  corrigeState[qcmId].open = true;
+  for (let i = 0; i < total; i++) corrigeState[qcmId].questions[i] = true;
+  renderCorrige();
+}
+
+function collapseAllCorrige(qcmId, total) {
+  if (!corrigeState[qcmId]) corrigeState[qcmId] = { open: true, questions: {} };
+  for (let i = 0; i < total; i++) corrigeState[qcmId].questions[i] = false;
+  renderCorrige();
+}
+
+function renderCorrige() {
+  const qcms = getQCMs(), el = $('corrigeContent');
+  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Aucun QCM créé.</div>'; return; }
+
+  el.innerHTML = qcms.map(qcm => {
+    const st = corrigeState[qcm.id] || { open: false, questions: {} };
+    const isOpen = st.open;
+    const anyOpen = Object.values(st.questions).some(v => v);
+
+    return `
+    <div class="card" style="padding:0;overflow:hidden">
+      <!-- En-tête QCM cliquable -->
+      <div onclick="toggleCorrigeQCM(${qcm.id})"
+        style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;cursor:pointer;user-select:none;gap:12px;transition:background .12s"
+        onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background=''">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0;color:var(--text2)">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${qcm.title}</span>
+          <span style="font-size:11px;color:var(--text3);white-space:nowrap">${qcm.questions.length} question${qcm.questions.length>1?'s':''}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0">
+          ${isOpen ? `
+            <button onclick="event.stopPropagation();expandAllCorrige(${qcm.id},${qcm.questions.length})"
+              class="btn btn-sm" style="font-size:11px;padding:3px 8px">Tout ouvrir</button>
+            <button onclick="event.stopPropagation();collapseAllCorrige(${qcm.id},${qcm.questions.length})"
+              class="btn btn-sm" style="font-size:11px;padding:3px 8px">Tout fermer</button>
+          ` : ''}
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            style="width:16px;height:16px;color:var(--text3);transition:transform .2s;transform:rotate(${isOpen?'180':'0'}deg)">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Corps accordéon QCM -->
+      ${isOpen ? `
+        <div style="border-top:1px solid var(--border);padding:12px 16px 16px">
+          ${qcm.questions.map((q, i) => {
+            const qOpen = st.questions[i] || false;
+            return `
+            <div style="margin-bottom:6px;border:1px solid var(--border);border-radius:8px;overflow:hidden">
+              <!-- En-tête question -->
+              <div onclick="toggleCorrigeQ(${qcm.id},${i})"
+                style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:var(--surface2);gap:10px;user-select:none"
+                onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='var(--surface2)'">
+                <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+                  <span style="font-size:11px;font-weight:700;color:var(--accent-light);background:var(--accent-bg);padding:1px 8px;border-radius:20px;border:1px solid #3d2878;flex-shrink:0">Q${i+1}</span>
+                  <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${q.text}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+                  <span style="font-size:11px;color:var(--success-light);background:var(--success-bg);padding:1px 8px;border-radius:10px;border:1px solid #1a4d30">
+                    ${['A','B','C','D'][q.correct]}. ${(q.options[q.correct]||'').slice(0,20)}${(q.options[q.correct]||'').length>20?'…':''}
+                  </span>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+                    style="width:14px;height:14px;color:var(--text3);transition:transform .2s;transform:rotate(${qOpen?'180':'0'}deg)">
+                    <polyline points="6 9 12 15 18 9"/>
+                  </svg>
+                </div>
+              </div>
+              <!-- Détail réponses -->
+              ${qOpen ? `
+                <div style="padding:10px 14px;background:var(--surface1,var(--bg));border-top:1px solid var(--border)">
+                  ${q.options.map((opt,j)=>opt?`
+                    <div class="corr-ans ${j===q.correct?'corr-ok':'corr-no'}" style="margin-bottom:5px">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        ${j===q.correct?'<polyline points="20 6 9 17 4 12"/>':'<line x1="5" y1="12" x2="19" y2="12"/>'}
+                      </svg>
+                      <strong>${['A','B','C','D'][j]}.</strong> ${opt}
+                      ${j===q.correct?'<span style="margin-left:auto;font-size:10px;font-weight:700;letter-spacing:.3px">✓ BONNE RÉPONSE</span>':''}
+                    </div>`:'').join('')}
+                </div>
+              ` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+      ` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ─── Manage ───────────────────────────────────────────────────────────────────
+function renderManage() {
+  const qcms = getQCMs(), el = $('manageContent');
+  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Aucun QCM à gérer.</div>'; return; }
+  el.innerHTML = qcms.map(qcm=>`
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:600;margin-bottom:3px">${qcm.title}</div>
+        <div style="font-size:12px;color:var(--text2)">${qcm.questions.length} question${qcm.questions.length>1?'s':''} · Créé le ${qcm.createdAt}</div>
+      </div>
+      <button class="btn btn-danger btn-sm" onclick="deleteQCM(${qcm.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+        Supprimer
+      </button>
+    </div>`).join('');
+}
+async function deleteQCM(id) {
+  if (!confirm('Supprimer ce QCM ? Cette action est irréversible.')) return;
+  await saveQCMs(getQCMs().filter(q=>q.id!==id));
+  await saveAttempts(getAttempts().filter(a=>a.qcmId!==id));
+  showToast('QCM supprimé.');
+  renderManage();
+}
+
+// ─── User tabs ────────────────────────────────────────────────────────────────
+function userTab(t) {
+  ['quiz','history'].forEach(x => { $('user'+cap(x)).classList.add('hidden'); $('tab'+cap(x)).classList.remove('active'); });
+  hide('quizTaking'); hide('quizResult');
+  show('user'+cap(t)); $('tab'+cap(t)).classList.add('active');
+  if (t==='quiz') renderQuizList();
+  if (t==='history') renderHistory();
+}
+
+// ─── Quiz list ────────────────────────────────────────────────────────────────
+function renderQuizList() {
+  const qcms = getQCMs(), el = $('quizList');
+  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Aucun QCM disponible. L\'administrateur doit en créer un.</div>'; return; }
+  el.innerHTML = qcms.map(qcm=>`
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div style="flex:1">
+        <div style="font-weight:600;margin-bottom:4px">${qcm.title}</div>
+        <div style="font-size:12px;color:var(--text2)">${qcm.questions.length} question${qcm.questions.length>1?'s':''}${qcm.duration?' · '+qcm.duration+' min':''} · ${qcm.createdAt}</div>
+        ${qcm.desc?`<div style="font-size:12px;color:var(--text3);margin-top:4px">${qcm.desc}</div>`:''}
+      </div>
+      <button class="btn btn-primary" onclick="startQuiz(${qcm.id})">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Commencer
+      </button>
+    </div>`).join('');
+}
+
+// ─── Quiz taking ──────────────────────────────────────────────────────────────
+let remoteMode = false; // true quand le quiz est passé via lien partagé
+let remoteConfig = null; // { jbKey, binId } pour push direct
+
+function startQuiz(id) {
+  const qcm = getQCMs().find(q => q.id === id);
+  if (!qcm) return;
+  currentQCM = qcm;
+  $('usernameInput').value = localStorage.getItem('qcm_last_username') || '';
+  $('usernameModalSub').textContent = `QCM : "${qcm.title}"`;
+  hide('usernameError');
+  $('usernameStep1').style.display = 'block';
+  $('usernameStep2').style.display = 'none';
+  show('usernameModal');
+  setTimeout(() => $('usernameInput').focus(), 80);
+}
+
+function goToStep2() {
+  const name = $('usernameInput').value.trim();
+  if (!name) { show('usernameError'); return; }
+  currentUsername = name;
+  localStorage.setItem('qcm_last_username', name);
+  $('step2NameLabel').textContent = name;
+  // Avertir si JSONBin non configuré
+  $('noCloudWarning').style.display = isCloudEnabled() ? 'none' : 'block';
+  $('usernameStep1').style.display = 'none';
+  $('usernameStep2').style.display = 'block';
+}
+
+function chooseLaunch() {
+  remoteMode = false;
+  hide('usernameModal');
+  launchQuiz();
+}
+
+function chooseLink() {
+  if (!isCloudEnabled()) {
+    $('noCloudWarning').style.display = 'block';
+    return;
+  }
+  hide('usernameModal');
+  generateShareLink();
+}
+
+function generateShareLink() {
+  const { masterKey, binId } = getJBConfig();
+  const payload = {
+    qcmId: currentQCM.id,
+    userName: currentUsername,
+    jbKey: masterKey,
+    binId: binId
+  };
+  const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
+  const link = `${location.href.split('?')[0]}?token=${token}`;
+  $('generatedLink').value = link;
+  $('linkModalMeta').innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:middle;margin-right:4px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Candidat : <strong>${currentUsername}</strong> &nbsp;·&nbsp;
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:middle;margin-right:4px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+    QCM : <strong>${currentQCM.title}</strong>`;
+  show('linkModal');
+}
+
+function copyLink() {
+  const link = $('generatedLink').value;
+  navigator.clipboard.writeText(link).then(() => {
+    const btn = $('copyLinkBtn');
+    btn.textContent = '✓ Copié !';
+    btn.style.background = 'var(--success-bg)';
+    btn.style.color = 'var(--success-light)';
+    btn.style.borderColor = '#1a4d30';
+    setTimeout(() => {
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copier`;
+      btn.style.background = ''; btn.style.color = ''; btn.style.borderColor = '';
+    }, 2000);
+  });
+}
+
+// ─── Mode lien partagé (remote) ───────────────────────────────────────────────
+function checkTokenInURL() {
+  const params = new URLSearchParams(location.search);
+  const token = params.get('token');
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(decodeURIComponent(escape(atob(token))));
+    const { qcmId, userName, jbKey, binId } = payload;
+    if (!qcmId || !userName || !jbKey || !binId) return false;
+
+    remoteMode = true;
+    remoteConfig = { jbKey, binId };
+    currentUsername = userName;
+
+    // Interface épurée : on cache tout et on affiche juste le quiz
+    document.querySelector('.header').style.display = 'none';
+    hide('viewLogin'); hide('viewAdmin'); hide('viewUser');
+
+    // Charger les QCMs depuis JSONBin pour trouver le bon
+    setRemoteStatus('Chargement du QCM…');
+    fetch(`${JSONBIN_BASE}/b/${binId}/latest`, { headers: { 'X-Master-Key': jbKey } })
+      .then(r => r.json())
+      .then(data => {
+        const qcms = data.record?.qcms || [];
+        const qcm = qcms.find(q => q.id === qcmId);
+        if (!qcm) { setRemoteStatus('QCM introuvable. Vérifiez le lien.', true); return; }
+        currentQCM = qcm;
+        showRemoteQuiz();
+      })
+      .catch(() => setRemoteStatus('Impossible de charger le QCM. Vérifiez votre connexion.', true));
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+function setRemoteStatus(msg, isError = false) {
+  document.querySelector('.main').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;text-align:center;gap:16px">
+      ${!isError ? `<div class="spinner" style="width:28px;height:28px;border-width:3px"></div>` : `<svg viewBox="0 0 24 24" fill="none" stroke="var(--danger-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:36px;height:36px"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`}
+      <div style="font-size:14px;color:var(--text2)">${msg}</div>
+    </div>`;
+}
+
+function showRemoteQuiz() {
+  // Injecter l'interface quiz dans .main
+  document.querySelector('.main').innerHTML = `
+    <div style="max-width:640px;margin:0 auto;padding:16px 0">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${currentQCM.title}</div>
+        <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          ${currentUsername}
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div class="progress-label"><span id="progressLabel"></span><span id="timerLabel" class="hidden" style="color:var(--accent-light);font-weight:700;font-variant-numeric:tabular-nums"></span></div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+      </div>
+      <div class="card"><div class="quiz-q" id="quizQ"></div><div class="quiz-opts" id="quizOpts"></div></div>
+      <div class="btn-group" style="margin-top:12px"><button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Suivant →</button></div>
+      <div id="quizResult" class="hidden">
+        <div class="card" style="text-align:center;padding:36px 20px">
+          <div class="result-circle" id="resultCircle"></div>
+          <div style="font-size:20px;font-weight:700;margin-bottom:8px" id="resultTitle"></div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="resultSub"></div>
+          <div id="remoteResultStatus" style="font-size:13px;padding:10px 16px;border-radius:8px;background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30"></div>
+        </div>
+      </div>
+    </div>`;
+  launchQuiz();
+}
+
+function launchQuiz() {
+  currentQIdx = 0; userAnswers = [];
+  const quizTaking = $('quizTaking');
+  if (quizTaking) { hide('userQuiz'); hide('quizResult'); show('quizTaking'); }
+  if ($('quizUserLabel')) $('quizUserLabel').textContent = currentUsername;
+  clearInterval(timerInterval);
+  if (currentQCM.duration > 0) {
+    timeLeft = currentQCM.duration * 60; show('timerLabel');
+    timerInterval = setInterval(() => {
+      timeLeft--;
+      const m = String(Math.floor(timeLeft/60)).padStart(2,'0'), s = String(timeLeft%60).padStart(2,'0');
+      $('timerLabel').textContent = `⏱ ${m}:${s}`;
+      if (timeLeft <= 0) { clearInterval(timerInterval); finishQuiz(); }
+    }, 1000);
+  } else { if($('timerLabel')) hide('timerLabel'); }
+  renderQuizQ();
+}
+
+function renderQuizQ() {
+  const q=currentQCM.questions[currentQIdx], total=currentQCM.questions.length;
+  $('progressLabel').textContent=`Question ${currentQIdx+1} / ${total}`;
+  $('progressFill').style.width=Math.round((currentQIdx/total)*100)+'%';
+  $('quizQ').textContent=q.text;
+  $('nextBtn').disabled=true;
+  $('nextBtn').textContent=currentQIdx<total-1?'Suivant →':'Terminer';
+  $('quizOpts').innerHTML=q.options.map((opt,j)=>opt?`
+    <div class="quiz-opt" onclick="selectAnswer(${j})" id="opt_${j}">
+      <div class="opt-circle">${['A','B','C','D'][j]}</div>
+      <span>${opt}</span>
+    </div>`:''  ).join('');
+}
+
+function selectAnswer(j) {
+  userAnswers[currentQIdx]=j;
+  document.querySelectorAll('.quiz-opt').forEach((el,i)=>{ el.classList.remove('selected'); if(i===j)el.classList.add('selected'); });
+  $('nextBtn').disabled=false;
+}
+
+function nextQuestion() {
+  if (userAnswers[currentQIdx]===undefined) return;
+  currentQIdx++;
+  if (currentQIdx>=currentQCM.questions.length) finishQuiz();
+  else renderQuizQ();
+}
+
+async function finishQuiz() {
+  clearInterval(timerInterval);
+  const total = currentQCM.questions.length;
+  const correct = currentQCM.questions.filter((q,i) => userAnswers[i] === q.correct).length;
+  const score = Math.round((correct/total)*100);
+  const details = currentQCM.questions.map((q,i) => ({
+    text: q.text, options: q.options, correct: q.correct,
+    given: userAnswers[i] !== undefined ? userAnswers[i] : null
+  }));
+  const attempt = { qcmId:currentQCM.id, qcmTitle:currentQCM.title, score, correct, total, date:new Date().toLocaleDateString('fr-FR'), userName:currentUsername, details };
+
+  if (remoteMode && remoteConfig) {
+    // Mode lien : push direct vers JSONBin, sans toucher au localStorage local
+    const rc = $('resultCircle');
+    const isGood = score>=70, isMid = score>=40;
+    hide($('quizTaking') ? 'quizTaking' : '_');
+    // Dans le mode remote, quizTaking et quizResult sont dans .main inline
+    document.querySelectorAll('.progress-wrap,.card').forEach(el => el.style.display='none');
+    $('nextBtn') && ($('nextBtn').style.display='none');
+    show('quizResult');
+    rc.style.cssText=`background:${isGood?'var(--success-bg)':isMid?'var(--warning-bg)':'var(--danger-bg)'};color:${isGood?'var(--success-light)':isMid?'var(--warning-light)':'var(--danger-light)'};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${isGood?'var(--success)':isMid?'var(--warning)':'var(--danger)'}`;
+    rc.innerHTML=`<span>${score}%</span><span style="font-size:12px;font-weight:400">${correct}/${total}</span>`;
+    $('resultTitle').textContent = isGood?'Excellent travail !':isMid?'Pas mal !':'À revoir…';
+    $('resultSub').textContent = `${correct} bonne${correct>1?'s':''} réponse${correct>1?'s':''} sur ${total}`;
+    const statusEl = $('remoteResultStatus');
+    if (statusEl) statusEl.textContent = '⏳ Envoi des résultats…';
+    try {
+      // Lire le bin, ajouter l'attempt, réécrire
+      const res = await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}/latest`, { headers:{'X-Master-Key':remoteConfig.jbKey} });
+      const data = await res.json();
+      const record = data.record || { qcms:[], attempts:[] };
+      record.attempts = [...(record.attempts||[]), attempt];
+      await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}`, {
+        method:'PUT',
+        headers:{'Content-Type':'application/json','X-Master-Key':remoteConfig.jbKey},
+        body: JSON.stringify(record)
+      });
+      if (statusEl) { statusEl.textContent = '✓ Résultats envoyés ! Vous pouvez fermer cette page.'; statusEl.style.background='var(--success-bg)'; statusEl.style.color='var(--success-light)'; statusEl.style.borderColor='#1a4d30'; }
+    } catch(e) {
+      if (statusEl) { statusEl.textContent = '✗ Erreur lors de l\'envoi. Vérifiez votre connexion.'; statusEl.style.background='var(--danger-bg)'; statusEl.style.color='var(--danger-light)'; statusEl.style.borderColor='#4d1f1f'; }
+    }
+  } else {
+    // Mode local normal
+    const attempts = getAttempts();
+    attempts.push(attempt);
+    await saveAttempts(attempts);
+    hide('quizTaking'); show('quizResult');
+    const rc = $('resultCircle');
+    const isGood = score>=70, isMid = score>=40;
+    rc.style.cssText=`background:${isGood?'var(--success-bg)':isMid?'var(--warning-bg)':'var(--danger-bg)'};color:${isGood?'var(--success-light)':isMid?'var(--warning-light)':'var(--danger-light)'};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${isGood?'var(--success)':isMid?'var(--warning)':'var(--danger)'}`;
+    rc.innerHTML=`<span>${score}%</span><span style="font-size:12px;font-weight:400">${correct}/${total}</span>`;
+    $('resultTitle').textContent = isGood?'Excellent travail !':isMid?'Pas mal !':'À revoir…';
+    $('resultSub').textContent = `${correct} bonne${correct>1?'s':''} réponse${correct>1?'s':''} sur ${total}`;
+  }
+}
+
+function backToList() { hide('quizResult'); show('userQuiz'); renderQuizList(); }
+
+// ─── Detail modal ─────────────────────────────────────────────────────────────
+function openDetail(attemptIdx) {
+  const attempts = getAttempts().slice().reverse();
+  const a = attempts[attemptIdx];
+  if (!a) return;
+
+  const isGood = a.score>=70, isMid = a.score>=40;
+  const color = isGood ? 'var(--success-light)' : isMid ? 'var(--warning-light)' : 'var(--danger-light)';
+  const bg    = isGood ? 'var(--success-bg)'   : isMid ? 'var(--warning-bg)'   : 'var(--danger-bg)';
+
+  $('detailTitle').innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:6px">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/>
+    </svg>${a.qcmTitle}`;
+  $('detailMeta').innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:11px;height:11px;display:inline;vertical-align:middle;margin-right:3px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    <strong>${a.userName||'Anonyme'}</strong> · ${a.date}`;
+
+  $('detailScore').innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+      <span style="font-size:13px;font-weight:600;color:${color}">${a.score}% — ${a.correct} / ${a.total} bonne${a.correct>1?'s':''} réponse${a.correct>1?'s':''}</span>
+      <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${bg};color:${color}">${isGood?'Réussi':isMid?'Passable':'Échoué'}</span>
+    </div>
+    <div class="detail-score-bar"><div class="detail-score-fill" style="width:${a.score}%;background:${color}"></div></div>`;
+
+  if (!a.details || !a.details.length) {
+    $('detailBody').innerHTML = '<div style="text-align:center;padding:24px;color:var(--text3);font-size:13px">Détail non disponible pour cette tentative (ancienne version).</div>';
+  } else {
+    $('detailBody').innerHTML = a.details.map((d, i) => {
+      const answered  = d.given !== null && d.given !== undefined;
+      const isCorrect = answered && d.given === d.correct;
+      return `
+      <div class="detail-q">
+        <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
+          <span style="font-size:11px;font-weight:700;color:var(--accent-light);background:var(--accent-bg);padding:1px 8px;border-radius:20px;border:1px solid #3d2878;flex-shrink:0;margin-top:1px">Q${i+1}</span>
+          <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:space-between;flex-wrap:wrap">
+            <span class="detail-q-text" style="margin:0">${d.text}</span>
+            ${answered
+              ? `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0;background:${isCorrect?'var(--success-bg)':'var(--danger-bg)'};color:${isCorrect?'var(--success-light)':'var(--danger-light)'};border:1px solid ${isCorrect?'#1a4d30':'#4d1f1f'}">${isCorrect?'✓ Correct':'✗ Incorrect'}</span>`
+              : `<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0;background:var(--surface3);color:var(--text3)">Sans réponse</span>`}
+          </div>
+        </div>
+        ${d.options.map((opt, j) => {
+          if (!opt) return '';
+          const isC = j === d.correct;
+          const isG = j === d.given;
+          let cls = 'detail-opt-neutral';
+          let icon = `<span style="opacity:.4">–</span>`;
+          if (isC && isG) { cls='detail-opt-correct'; icon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>`; }
+          else if (isC)  { cls='detail-opt-correct'; icon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="20 6 9 17 4 12"/></svg>`; }
+          else if (isG)  { cls='detail-opt-wrong';   icon=`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`; }
+          return `
+          <div class="detail-opt ${cls}">
+            <div class="detail-opt-letter">${['A','B','C','D'][j]}</div>
+            <span style="flex:1">${opt}</span>
+            ${icon}
+            ${isC ? `<span style="font-size:10px;font-weight:700;letter-spacing:.3px;opacity:.8">BONNE RÉPONSE</span>` : ''}
+            ${isG && !isC ? `<span style="font-size:10px;font-weight:700;letter-spacing:.3px;opacity:.8">VOTRE RÉPONSE</span>` : ''}
+          </div>`;
+        }).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  show('detailModal');
+}
+
+// ─── History ──────────────────────────────────────────────────────────────────
+function renderHistory() {
+  const att = getAttempts().slice().reverse(), el = $('historyList');
+  if (!att.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Aucune tentative pour l\'instant.</div>'; return; }
+  el.innerHTML = att.map((a, i) => `
+    <div class="attempt-row" style="cursor:default">
+      <span style="display:flex;align-items:center;gap:5px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <strong>${a.userName||'Anonyme'}</strong>
+      </span>
+      <span style="font-weight:600;flex:1">${a.qcmTitle}</span>
+      <span class="attempt-score" style="color:${a.score>=70?'var(--success-light)':a.score>=40?'var(--warning-light)':'var(--danger-light)'}">${a.score}%</span>
+      <span style="color:var(--text3);font-size:12px">${a.date}</span>
+      <button class="btn btn-sm" onclick="openDetail(${i})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Détail
+      </button>
+    </div>`).join('');
+}
+
+// ─── Offline detection ────────────────────────────────────────────────────────
+function updateOnlineStatus() {
+  if (!navigator.onLine) { show('offlineLabel'); } else { hide('offlineLabel'); }
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// ─── Service Worker registration ──────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  const swCode = `
+const CACHE='qcm-studio-v1';
+const ASSETS=['/'];
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()));
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()));
+});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(
+    fetch(e.request).then(res=>{
+      if(res&&res.status===200){
+        const clone=res.clone();
+        caches.open(CACHE).then(c=>c.put(e.request,clone));
+      }
+      return res;
+    }).catch(()=>caches.match(e.request))
+  );
+});`;
+  const blob = new Blob([swCode], {type:'application/javascript'});
+  const swURL = URL.createObjectURL(blob);
+  navigator.serviceWorker.register(swURL).catch(()=>{});
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+renderQuestions();
+if (!checkTokenInURL()) {
+  // Mode normal — rien à faire, l'écran de login est visible par défaut
+}
+</script>
+</body>
+</html>
