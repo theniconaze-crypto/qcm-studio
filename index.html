@@ -1164,6 +1164,27 @@ async function generateWithAI() {
   }
 }
 
+// ─── Delete attempt ───────────────────────────────────────────────────────────
+async function deleteAttempt(reversedIdx, from) {
+  if (!confirm('Supprimer ce résultat ? Cette action est irréversible.')) return;
+  const attempts = getAttempts();
+  const realIdx = attempts.length - 1 - reversedIdx;
+  attempts.splice(realIdx, 1);
+  await saveAttempts(attempts);
+  showToast('Résultat supprimé.');
+  if (from === 'history') renderHistory();
+  else renderStats();
+}
+
+async function deleteAllAttempts(qcmId) {
+  const qcm = getQCMs().find(q => q.id === qcmId);
+  if (!confirm(`Supprimer tous les résultats de "${qcm?.title}" ? Cette action est irréversible.`)) return;
+  const attempts = getAttempts().filter(a => a.qcmId !== qcmId);
+  await saveAttempts(attempts);
+  showToast('Tous les résultats supprimés.');
+  renderStats();
+}
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 function openDetailAdmin(attemptIdx) {
   // Dans les stats, les attempts ne sont pas inversés
@@ -1182,34 +1203,44 @@ function renderStats() {
   el.innerHTML = qcms.map(qcm => {
     const att = attempts.map((a, globalIdx) => ({a, globalIdx})).filter(({a}) => a.qcmId === qcm.id);
     const scores = att.map(({a}) => a.score);
-    const avg = att.length ? Math.round(scores.reduce((s,v)=>s+v,0)/att.length) : null;
+    const avg  = att.length ? Math.round(scores.reduce((s,v) => s+v, 0) / att.length) : null;
     const best = att.length ? Math.max(...scores) : null;
-    return `<div class="card"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>${qcm.title}</div>
-      <div class="stats-grid">
-        <div class="stat-card"><div class="stat-val c-blue">${att.length}</div><div class="stat-lbl">Tentatives</div></div>
-        <div class="stat-card"><div class="stat-val c-green">${avg!==null?avg+'%':'—'}</div><div class="stat-lbl">Score moyen</div></div>
-        <div class="stat-card"><div class="stat-val c-amber">${best!==null?best+'%':'—'}</div><div class="stat-lbl">Meilleur</div></div>
-      </div>
-      ${att.length ? att.map(({a, globalIdx}) => {
-        // Index dans la liste inversée (utilisé par openDetail)
-        const ri = total_att - 1 - globalIdx;
-        return `
-        <div class="attempt-row">
-          <span style="display:flex;align-items:center;gap:5px;font-weight:600">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-            ${a.userName || 'Anonyme'}
-          </span>
-          <span style="color:var(--text3);font-size:12px">${a.date}</span>
-          <span class="attempt-score" style="color:${a.score>=70?'var(--success-light)':a.score>=40?'var(--warning-light)':'var(--danger-light)'}">${a.score}% (${a.correct}/${a.total})</span>
-          <span class="tag ${a.score>=70?'tag-ok':a.score>=40?'tag-warn':'tag-bad'}">${a.score>=70?'Réussi':a.score>=40?'Passable':'Échoué'}</span>
-          <button class="btn btn-sm" onclick="openDetail(${ri})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-            Détail
-          </button>
-        </div>`;}).join('') : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Aucune tentative.</div>'}
-    </div>`;
+
+    const attRows = att.length ? att.map(({a, globalIdx}) => {
+      const ri = total_att - 1 - globalIdx;
+      const sc = a.score>=70 ? 'var(--success-light)' : a.score>=40 ? 'var(--warning-light)' : 'var(--danger-light)';
+      const tc = a.score>=70 ? 'tag-ok' : a.score>=40 ? 'tag-warn' : 'tag-bad';
+      const tl = a.score>=70 ? 'Réussi' : a.score>=40 ? 'Passable' : 'Échoué';
+      return '<div class="attempt-row">'
+        + '<span style="display:flex;align-items:center;gap:5px;font-weight:600">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
+        + (a.userName || 'Anonyme') + '</span>'
+        + '<span style="color:var(--text3);font-size:12px">' + a.date + '</span>'
+        + '<span class="attempt-score" style="color:' + sc + '">' + a.score + '% (' + a.correct + '/' + a.total + ')</span>'
+        + '<span class="tag ' + tc + '">' + tl + '</span>'
+        + '<button class="btn btn-sm" onclick="openDetail(' + ri + ')" style="font-size:11px;padding:4px 10px;flex-shrink:0">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Détail</button>'
+        + '<button class="btn btn-sm" onclick="deleteAttempt(' + ri + ',\'stats\')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer">'
+        + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'
+        + '</div>';
+    }).join('') : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Aucune tentative.</div>';
+
+    const delAll = att.length > 1
+      ? '<div style="margin-top:8px;text-align:right"><button class="btn btn-sm" onclick="deleteAllAttempts(' + qcm.id + ')" style="font-size:11px;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg> Supprimer tous les résultats</button></div>'
+      : '';
+
+    return '<div class="card">'
+      + '<div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>' + qcm.title + '</div>'
+      + '<div class="stats-grid">'
+      + '<div class="stat-card"><div class="stat-val c-blue">' + att.length + '</div><div class="stat-lbl">Tentatives</div></div>'
+      + '<div class="stat-card"><div class="stat-val c-green">' + (avg !== null ? avg+'%' : '—') + '</div><div class="stat-lbl">Score moyen</div></div>'
+      + '<div class="stat-card"><div class="stat-val c-amber">' + (best !== null ? best+'%' : '—') + '</div><div class="stat-lbl">Meilleur</div></div>'
+      + '</div>'
+      + attRows + delAll
+      + '</div>';
   }).join('');
 }
+
 
 // ─── Corrigés ─────────────────────────────────────────────────────────────────
 const corrigeState = {}; // { qcmId: { open: bool, questions: { i: bool } } }
@@ -1495,31 +1526,48 @@ function setRemoteStatus(msg, isError = false) {
 }
 
 function showRemoteQuiz() {
-  // Injecter l'interface quiz dans .main
   document.querySelector('.main').innerHTML = `
-    <div style="max-width:640px;margin:0 auto;padding:16px 0">
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:18px;font-weight:700;margin-bottom:4px">${currentQCM.title}</div>
+    <div id="remoteWrap" style="max-width:640px;margin:0 auto;padding:16px 0">
+
+      <!-- En-tête fixe -->
+      <div style="text-align:center;margin-bottom:24px">
+        <div style="font-size:20px;font-weight:700;margin-bottom:6px;letter-spacing:-0.3px">${currentQCM.title}</div>
         <div style="font-size:13px;color:var(--text2);display:flex;align-items:center;justify-content:center;gap:6px">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           ${currentUsername}
         </div>
       </div>
-      <div class="progress-wrap">
-        <div class="progress-label"><span id="progressLabel"></span><span id="timerLabel" class="hidden" style="color:var(--accent-light);font-weight:700;font-variant-numeric:tabular-nums"></span></div>
-        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-      </div>
-      <div class="card"><div class="quiz-q" id="quizQ"></div><div class="quiz-opts" id="quizOpts"></div></div>
-      <div class="btn-group" style="margin-top:12px"><button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Suivant →</button></div>
-      <div id="quizResult" class="hidden">
-        <div class="card" style="text-align:center;padding:36px 20px">
-          <div class="result-circle" id="resultCircle"></div>
-          <div style="font-size:20px;font-weight:700;margin-bottom:8px" id="resultTitle"></div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:16px" id="resultSub"></div>
-          <div id="remoteResultStatus" style="font-size:13px;padding:10px 16px;border-radius:8px;background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30"></div>
+
+      <!-- Zone quiz -->
+      <div id="remoteQuizZone">
+        <div class="progress-wrap">
+          <div class="progress-label">
+            <span id="progressLabel"></span>
+            <span id="timerLabel" class="hidden" style="color:var(--accent-light);font-weight:700;font-variant-numeric:tabular-nums"></span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+        <div class="card">
+          <div class="quiz-q" id="quizQ"></div>
+          <div class="quiz-opts" id="quizOpts"></div>
+        </div>
+        <div class="btn-group" style="margin-top:12px">
+          <button class="btn btn-primary" id="nextBtn" onclick="nextQuestion()" disabled>Suivant →</button>
         </div>
       </div>
+
+      <!-- Zone résultat (cachée au départ) -->
+      <div id="remoteResultZone" style="display:none">
+        <div class="card" style="text-align:center;padding:36px 20px">
+          <div id="resultCircle" style="width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700"></div>
+          <div id="resultTitle" style="font-size:20px;font-weight:700;margin-bottom:8px;letter-spacing:-0.3px"></div>
+          <div id="resultSub" style="font-size:13px;color:var(--text2);margin-bottom:16px"></div>
+          <div id="remoteResultStatus" style="font-size:13px;padding:12px 16px;border-radius:8px;margin-top:4px"></div>
+        </div>
+      </div>
+
     </div>`;
+
   launchQuiz();
 }
 
@@ -1580,34 +1628,54 @@ async function finishQuiz() {
   const attempt = { qcmId:currentQCM.id, qcmTitle:currentQCM.title, score, correct, total, date:new Date().toLocaleDateString('fr-FR'), userName:currentUsername, details };
 
   if (remoteMode && remoteConfig) {
-    // Mode lien : push direct vers JSONBin, sans toucher au localStorage local
+    // Cacher la zone quiz, afficher la zone résultat
+    const quizZone = $('remoteQuizZone');
+    const resultZone = $('remoteResultZone');
+    if (quizZone)  quizZone.style.display  = 'none';
+    if (resultZone) resultZone.style.display = 'block';
+
     const rc = $('resultCircle');
     const isGood = score>=70, isMid = score>=40;
-    hide($('quizTaking') ? 'quizTaking' : '_');
-    // Dans le mode remote, quizTaking et quizResult sont dans .main inline
-    document.querySelectorAll('.progress-wrap,.card').forEach(el => el.style.display='none');
-    $('nextBtn') && ($('nextBtn').style.display='none');
-    show('quizResult');
-    rc.style.cssText=`background:${isGood?'var(--success-bg)':isMid?'var(--warning-bg)':'var(--danger-bg)'};color:${isGood?'var(--success-light)':isMid?'var(--warning-light)':'var(--danger-light)'};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${isGood?'var(--success)':isMid?'var(--warning)':'var(--danger)'}`;
-    rc.innerHTML=`<span>${score}%</span><span style="font-size:12px;font-weight:400">${correct}/${total}</span>`;
-    $('resultTitle').textContent = isGood?'Excellent travail !':isMid?'Pas mal !':'À revoir…';
-    $('resultSub').textContent = `${correct} bonne${correct>1?'s':''} réponse${correct>1?'s':''} sur ${total}`;
+    const colBg = isGood?'var(--success-bg)':isMid?'var(--warning-bg)':'var(--danger-bg)';
+    const colFg = isGood?'var(--success-light)':isMid?'var(--warning-light)':'var(--danger-light)';
+    const colBd = isGood?'var(--success)':isMid?'var(--warning)':'var(--danger)';
+    if (rc) {
+      rc.style.cssText = `background:${colBg};color:${colFg};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${colBd}`;
+      rc.innerHTML = `<span>${score}%</span><span style="font-size:12px;font-weight:400">${correct}/${total}</span>`;
+    }
+    if ($('resultTitle')) $('resultTitle').textContent = isGood?'Excellent travail !':isMid?'Pas mal !':'À revoir…';
+    if ($('resultSub'))   $('resultSub').textContent   = `${correct} bonne${correct>1?'s':''} réponse${correct>1?'s':''} sur ${total}`;
+
     const statusEl = $('remoteResultStatus');
-    if (statusEl) statusEl.textContent = '⏳ Envoi des résultats…';
+    if (statusEl) {
+      statusEl.textContent = '⏳ Envoi des résultats en cours…';
+      statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--accent-bg);color:var(--accent-light);border:1px solid #3d2878;margin-top:8px`;
+    }
+
     try {
-      // Lire le bin, ajouter l'attempt, réécrire
-      const res = await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}/latest`, { headers:{'X-Master-Key':remoteConfig.jbKey} });
+      const res = await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}/latest`, {
+        headers: { 'X-Master-Key': remoteConfig.jbKey }
+      });
+      if (!res.ok) throw new Error(`Lecture échouée (${res.status})`);
       const data = await res.json();
-      const record = data.record || { qcms:[], attempts:[] };
-      record.attempts = [...(record.attempts||[]), attempt];
-      await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}`, {
-        method:'PUT',
-        headers:{'Content-Type':'application/json','X-Master-Key':remoteConfig.jbKey},
+      const record = data.record || { qcms: [], attempts: [] };
+      record.attempts = [...(record.attempts || []), attempt];
+      const putRes = await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'X-Master-Key': remoteConfig.jbKey },
         body: JSON.stringify(record)
       });
-      if (statusEl) { statusEl.textContent = '✓ Résultats envoyés ! Vous pouvez fermer cette page.'; statusEl.style.background='var(--success-bg)'; statusEl.style.color='var(--success-light)'; statusEl.style.borderColor='#1a4d30'; }
+      if (!putRes.ok) throw new Error(`Écriture échouée (${putRes.status})`);
+      if (statusEl) {
+        statusEl.textContent = '✓ Résultats envoyés avec succès ! Vous pouvez fermer cette page.';
+        statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30;margin-top:8px`;
+      }
     } catch(e) {
-      if (statusEl) { statusEl.textContent = '✗ Erreur lors de l\'envoi. Vérifiez votre connexion.'; statusEl.style.background='var(--danger-bg)'; statusEl.style.color='var(--danger-light)'; statusEl.style.borderColor='#4d1f1f'; }
+      console.error('Push remote échoué:', e);
+      if (statusEl) {
+        statusEl.textContent = `✗ Erreur lors de l'envoi : ${e.message}`;
+        statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--danger-bg);color:var(--danger-light);border:1px solid #4d1f1f;margin-top:8px`;
+      }
     }
   } else {
     // Mode local normal
@@ -1709,6 +1777,9 @@ function renderHistory() {
       <button class="btn btn-sm" onclick="openDetail(${i})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Détail
+      </button>
+      <button class="btn btn-sm" onclick="deleteAttempt(${i},'history')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer ce résultat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       </button>
     </div>`).join('');
 }
