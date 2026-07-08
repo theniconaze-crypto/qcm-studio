@@ -30,6 +30,7 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:0.3px}
 .badge-admin{background:var(--pro-bg);color:var(--pro-light);border:1px solid #3d2d6b}
 .badge-user{background:var(--accent-bg);color:var(--accent-light);border:1px solid #3d2878}
+.badge-creator{background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30}
 .offline-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px}
 .offline-label{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
 .main{flex:1;padding:24px 20px;max-width:860px;margin:0 auto;width:100%}
@@ -38,11 +39,12 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .login-hero{text-align:center;margin-bottom:32px;padding-top:24px}
 .login-title{font-size:26px;font-weight:700;letter-spacing:-0.5px;margin-bottom:8px}
 .login-sub{color:var(--text2);font-size:14px}
-.login-wrap{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.login-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 20px;cursor:pointer;transition:border-color .15s,background .15s;text-align:center}
 .login-card:hover{border-color:var(--border2);background:var(--surface2)}
 .login-icon{width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:24px}
 .icon-admin{background:var(--pro-bg);border:1px solid #3d2d6b}
+.icon-creator{background:var(--success-bg);border:1px solid #1a4d30}
 .icon-user{background:var(--accent-bg);border:1px solid #3d2878}
 .login-card-title{font-size:15px;font-weight:600;margin-bottom:6px}
 .login-card-desc{font-size:12px;color:var(--text2);line-height:1.5}
@@ -198,8 +200,10 @@ textarea{resize:vertical;min-height:60px}
 .section-head p{font-size:12px;color:var(--text2)}
 .toast{position:fixed;bottom:24px;right:20px;background:var(--success-bg);border:1px solid var(--success);color:var(--success-light);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;z-index:200;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast svg{width:15px;height:15px}
-@media(max-width:600px){
+@media(max-width:760px){
   .login-wrap{grid-template-columns:1fr}
+}
+@media(max-width:600px){
   .stats-grid{grid-template-columns:1fr 1fr}
   .options-grid{grid-template-columns:1fr}
 }
@@ -245,12 +249,19 @@ textarea{resize:vertical;min-height:60px}
     <div class="login-sub">Créez, partagez et répondez à des questionnaires interactifs</div>
   </div>
   <div class="login-wrap">
-    <div class="login-card" onclick="openPasswordModal()">
+    <div class="login-card" onclick="openPasswordModal('admin')">
       <div class="login-icon icon-admin">
         <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
       <div class="login-card-title">Administrateur</div>
       <div class="login-card-desc">Créer et configurer des QCM, consulter les statistiques et les corrigés. Accès protégé par mot de passe.</div>
+    </div>
+    <div class="login-card" onclick="openPasswordModal('creator')">
+      <div class="login-icon icon-creator">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#86efac" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+      </div>
+      <div class="login-card-title">Créateur</div>
+      <div class="login-card-desc">Répondre aux QCM et consulter vos résultats, avec en plus la création et la gestion des QCM. Accès protégé par mot de passe.</div>
     </div>
     <div class="login-card" onclick="login('user')">
       <div class="login-icon icon-user">
@@ -314,7 +325,7 @@ textarea{resize:vertical;min-height:60px}
   <div class="modal" onclick="event.stopPropagation()">
     <div class="modal-title">
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--pro-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Accès administrateur
+      <span id="pwModalTitle">Accès administrateur</span>
     </div>
     <div class="modal-sub">Saisissez le mot de passe pour continuer.</div>
     <div id="pwError" class="modal-error hidden">Mot de passe incorrect. Réessayez.</div>
@@ -391,29 +402,51 @@ textarea{resize:vertical;min-height:60px}
   </div>
 </div>
 
-<!-- ADMIN -->
-<div id="viewAdmin" class="hidden">
+<!-- APP (admin / créateur / utilisateur — les onglets visibles dépendent du rôle) -->
+<div id="viewApp" class="hidden">
   <div class="tabs">
-    <button class="tab active" id="tabCreate" onclick="adminTab('create')">
+    <button class="tab" id="tabQuiz" onclick="goTab('quiz')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      QCM disponibles
+    </button>
+    <button class="tab" id="tabHistory" onclick="goTab('history')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Mes résultats
+    </button>
+    <button class="tab active" id="tabCreate" onclick="goTab('create')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       Créer
     </button>
-    <button class="tab" id="tabStats" onclick="adminTab('stats')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-      Statistiques
-    </button>
-    <button class="tab" id="tabCorrige" onclick="adminTab('corrige')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-      Corrigés
-    </button>
-    <button class="tab" id="tabManage" onclick="adminTab('manage')">
+    <button class="tab" id="tabManage" onclick="goTab('manage')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
       Gérer
     </button>
+    <button class="tab" id="tabStats" onclick="goTab('stats')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Statistiques
+    </button>
+    <button class="tab" id="tabCorrige" onclick="goTab('corrige')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      Corrigés
+    </button>
   </div>
 
-  <!-- CREATE -->
+  <!-- QUIZ (utilisateur / créateur) -->
+  <div id="userQuiz" class="hidden"><div id="quizList"></div></div>
+  <div id="userHistory" class="hidden">
+    <div class="section-head"><h2>Mes résultats</h2><p>Historique de vos tentatives</p></div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- CREATE (admin / créateur) -->
   <div id="adminCreate">
+    <div id="editBanner" class="hidden" style="background:var(--warning-bg);border:1px solid #4d3a0a;color:var(--warning-light);border-radius:8px;padding:10px 14px;margin-bottom:14px;font-size:12px;display:flex;align-items:center;justify-content:space-between;gap:10px">
+      <span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;display:inline;vertical-align:middle;margin-right:5px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        Modification du QCM « <strong id="editBannerTitle"></strong> »
+      </span>
+      <button class="btn btn-sm" onclick="cancelEditQCM()">Annuler la modification</button>
+    </div>
     <div class="card">
       <div class="card-title">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
@@ -454,9 +487,9 @@ textarea{resize:vertical;min-height:60px}
     </div>
     <div id="questionsList"></div>
     <div class="btn-group" style="margin-top:14px">
-      <button class="btn btn-primary" onclick="saveQCM()">
+      <button class="btn btn-primary" onclick="saveQCM()" id="saveQCMBtn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-        Enregistrer le QCM
+        <span id="saveQCMBtnLabel">Enregistrer le QCM</span>
       </button>
       <button class="btn" onclick="resetForm()">Réinitialiser</button>
     </div>
@@ -476,27 +509,8 @@ textarea{resize:vertical;min-height:60px}
 
   <!-- MANAGE -->
   <div id="adminManage" class="hidden">
-    <div class="section-head"><h2>Gérer les QCM</h2><p>Supprimer les QCM existants</p></div>
+    <div class="section-head"><h2>Gérer les QCM</h2><p>Modifier ou supprimer les QCM existants</p></div>
     <div id="manageContent"></div>
-  </div>
-</div>
-
-<!-- USER -->
-<div id="viewUser" class="hidden">
-  <div class="tabs">
-    <button class="tab active" id="tabQuiz" onclick="userTab('quiz')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
-      QCM disponibles
-    </button>
-    <button class="tab" id="tabHistory" onclick="userTab('history')">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-      Mes résultats
-    </button>
-  </div>
-  <div id="userQuiz"><div id="quizList"></div></div>
-  <div id="userHistory" class="hidden">
-    <div class="section-head"><h2>Mes résultats</h2><p>Historique de vos tentatives</p></div>
-    <div id="historyList"></div>
   </div>
 
   <!-- Modale nom d'utilisateur -->
@@ -661,9 +675,12 @@ const hide = id => $(id).classList.add('hidden');
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const ADMIN_PASSWORD = 'totototo';
+const CREATOR_PASSWORD = 'createur123';
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let role = null, questions = [], currentQCM = null;
+let pendingLoginRole = null;
+let editingQcmId = null;
 let currentQIdx = 0, userAnswers = [], timerInterval = null, timeLeft = 0;
 let currentUsername = '';
 
@@ -844,7 +861,9 @@ function disconnectCloud() {
 }
 
 
-function openPasswordModal() {
+function openPasswordModal(r) {
+  pendingLoginRole = r || 'admin';
+  $('pwModalTitle').textContent = pendingLoginRole === 'creator' ? 'Accès créateur' : 'Accès administrateur';
   $('pwInput').value = '';
   hide('pwError');
   show('pwModal');
@@ -856,9 +875,10 @@ function togglePw() {
   inp.type = inp.type === 'password' ? 'text' : 'password';
 }
 function checkPassword() {
-  if ($('pwInput').value === ADMIN_PASSWORD) {
+  const expected = pendingLoginRole === 'creator' ? CREATOR_PASSWORD : ADMIN_PASSWORD;
+  if ($('pwInput').value === expected) {
     hide('pwModal');
-    login('admin');
+    login(pendingLoginRole);
   } else {
     show('pwError');
     $('pwInput').value = '';
@@ -867,40 +887,63 @@ function checkPassword() {
 }
 $('pwModal').addEventListener('click', e => { if (e.target === $('pwModal')) closePwModal(); });
 
+// ─── Rôles & onglets ────────────────────────────────────────────────────────
+// Le rôle "creator" a les mêmes droits que "user" (répondre aux QCM, voir ses
+// résultats) + la création et la gestion des QCM, sans accès aux statistiques
+// ni aux corrigés globaux (réservés à l'administrateur).
+const ROLE_LABELS  = { admin: 'Administrateur', creator: 'Créateur', user: 'Utilisateur' };
+const ROLE_BADGES  = { admin: 'badge-admin', creator: 'badge-creator', user: 'badge-user' };
+const ROLE_TABS    = { admin: ['create','stats','corrige','manage'], creator: ['quiz','history','create','manage'], user: ['quiz','history'] };
+const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage' };
+
 // ─── Login / logout ───────────────────────────────────────────────────────────
 function login(r) {
   role = r;
   hide('viewLogin');
   const badge = $('headerBadge');
-  badge.textContent = r === 'admin' ? 'Administrateur' : 'Utilisateur';
-  badge.className = 'badge ' + (r === 'admin' ? 'badge-admin' : 'badge-user');
+  badge.textContent = ROLE_LABELS[r] || r;
+  badge.className = 'badge ' + (ROLE_BADGES[r] || 'badge-user');
   badge.classList.remove('hidden');
   show('logoutBtn');
-  if (r === 'admin') {
-    show('viewAdmin'); adminTab('create');
+  show('viewApp');
+  applyRoleTabs(r);
+  const defaultTab = ROLE_TABS[r][0];
+  if (r === 'admin' || r === 'creator') {
     show('apiKeyBtn'); updateApiKeyUI();
     show('cloudBtn');
-    if (isCloudEnabled()) { setCloudStatus('synced','Cloud ✓'); syncFromCloud().then(()=>{ adminTab('create'); }); }
+    if (isCloudEnabled()) { setCloudStatus('synced','Cloud ✓'); syncFromCloud().then(()=>{ goTab(defaultTab); }); }
     else setCloudStatus('','Sync cloud');
   }
-  else { show('viewUser'); hide('apiKeyBtn'); hide('cloudBtn'); userTab('quiz'); if (isCloudEnabled()) syncFromCloud().then(()=>renderQuizList()); }
+  else { hide('apiKeyBtn'); hide('cloudBtn'); if (isCloudEnabled()) syncFromCloud().then(()=>renderQuizList()); }
+  goTab(defaultTab);
 }
 function logout() {
-  role = null; questions = []; currentQCM = null;
+  role = null; questions = []; currentQCM = null; editingQcmId = null;
   clearInterval(timerInterval);
-  ['viewAdmin','viewUser','logoutBtn','headerBadge','apiKeyBtn','cloudBtn'].forEach(hide);
+  ['viewApp','logoutBtn','headerBadge','apiKeyBtn','cloudBtn'].forEach(hide);
   show('viewLogin');
   resetForm();
 }
 
-// ─── Admin tabs ───────────────────────────────────────────────────────────────
-function adminTab(t) {
-  ['create','stats','corrige','manage'].forEach(x => {
-    $('admin'+cap(x)).classList.add('hidden');
+// Affiche uniquement les onglets autorisés pour le rôle courant
+function applyRoleTabs(r) {
+  const allowed = ROLE_TABS[r] || [];
+  Object.keys(TAB_CONTENT).forEach(t => {
+    $('tab'+cap(t)).classList.toggle('hidden', !allowed.includes(t));
+  });
+}
+
+// ─── Onglets (communs admin / créateur / utilisateur) ─────────────────────────
+function goTab(t) {
+  Object.keys(TAB_CONTENT).forEach(x => {
+    $(TAB_CONTENT[x]).classList.add('hidden');
     $('tab'+cap(x)).classList.remove('active');
   });
-  show('admin'+cap(t));
+  hide('quizTaking'); hide('quizResult');
+  show(TAB_CONTENT[t]);
   $('tab'+cap(t)).classList.add('active');
+  if (t==='quiz') renderQuizList();
+  if (t==='history') renderHistory();
   if (t==='stats') renderStats();
   if (t==='corrige') renderCorrige();
   if (t==='manage') renderManage();
@@ -956,21 +999,61 @@ async function saveQCM() {
     alert('Chaque question doit avoir un texte et au moins 2 options.'); return;
   }
   const qcms = getQCMs();
-  qcms.push({
-    id: Date.now(), title, desc: $('qcmDesc').value,
-    duration: parseInt($('qcmDuration').value)||0,
-    questions: JSON.parse(JSON.stringify(questions)),
-    createdAt: new Date().toLocaleDateString('fr-FR')
-  });
-  saveQCMs(qcms);
-  showToast('QCM enregistré avec succès !');
+  const cleanQuestions = JSON.parse(JSON.stringify(questions));
+  const duration = parseInt($('qcmDuration').value) || 0;
+  const desc = $('qcmDesc').value;
+
+  if (editingQcmId !== null) {
+    // Mode modification : on met à jour le QCM existant (id et date de création conservés)
+    const idx = qcms.findIndex(q => q.id === editingQcmId);
+    if (idx === -1) {
+      alert("Ce QCM n'existe plus — il a peut-être été supprimé entre-temps.");
+      cancelEditQCM();
+      return;
+    }
+    qcms[idx] = { ...qcms[idx], title, desc, duration, questions: cleanQuestions };
+    await saveQCMs(qcms);
+    showToast('QCM mis à jour avec succès !');
+  } else {
+    qcms.push({
+      id: Date.now(), title, desc, duration,
+      questions: cleanQuestions,
+      createdAt: new Date().toLocaleDateString('fr-FR')
+    });
+    await saveQCMs(qcms);
+    showToast('QCM enregistré avec succès !');
+  }
   resetForm();
 }
 
 function resetForm() {
   questions = [];
+  editingQcmId = null;
+  hide('editBanner');
+  $('saveQCMBtnLabel').textContent = 'Enregistrer le QCM';
   ['qcmTitle','qcmDesc','qcmDuration','aiPrompt'].forEach(id => $(id).value='');
   renderQuestions();
+}
+
+// ─── Édition d'un QCM existant ─────────────────────────────────────────────────
+function editQCM(id) {
+  const qcm = getQCMs().find(q => q.id === id);
+  if (!qcm) return;
+  editingQcmId = id;
+  $('qcmTitle').value = qcm.title || '';
+  $('qcmDesc').value = qcm.desc || '';
+  $('qcmDuration').value = qcm.duration || '';
+  questions = JSON.parse(JSON.stringify(qcm.questions || []));
+  renderQuestions();
+  $('editBannerTitle').textContent = qcm.title;
+  show('editBanner');
+  $('saveQCMBtnLabel').textContent = 'Mettre à jour le QCM';
+  goTab('create');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEditQCM() {
+  resetForm();
 }
 
 // ─── API Key management (multi-provider) ─────────────────────────────────────
@@ -1362,27 +1445,25 @@ function renderManage() {
         <div style="font-weight:600;margin-bottom:3px">${qcm.title}</div>
         <div style="font-size:12px;color:var(--text2)">${qcm.questions.length} question${qcm.questions.length>1?'s':''} · Créé le ${qcm.createdAt}</div>
       </div>
-      <button class="btn btn-danger btn-sm" onclick="deleteQCM(${qcm.id})">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
-        Supprimer
-      </button>
+      <div class="btn-group">
+        <button class="btn btn-sm" onclick="editQCM(${qcm.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteQCM(${qcm.id})">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Supprimer
+        </button>
+      </div>
     </div>`).join('');
 }
 async function deleteQCM(id) {
   if (!confirm('Supprimer ce QCM ? Cette action est irréversible.')) return;
   await saveQCMs(getQCMs().filter(q=>q.id!==id));
   await saveAttempts(getAttempts().filter(a=>a.qcmId!==id));
+  if (editingQcmId === id) resetForm(); // le QCM en cours d'édition vient d'être supprimé
   showToast('QCM supprimé.');
   renderManage();
-}
-
-// ─── User tabs ────────────────────────────────────────────────────────────────
-function userTab(t) {
-  ['quiz','history'].forEach(x => { $('user'+cap(x)).classList.add('hidden'); $('tab'+cap(x)).classList.remove('active'); });
-  hide('quizTaking'); hide('quizResult');
-  show('user'+cap(t)); $('tab'+cap(t)).classList.add('active');
-  if (t==='quiz') renderQuizList();
-  if (t==='history') renderHistory();
 }
 
 // ─── Quiz list ────────────────────────────────────────────────────────────────
@@ -1497,7 +1578,7 @@ function checkTokenInURL() {
 
     // Interface épurée : on cache tout et on affiche juste le quiz
     document.querySelector('.header').style.display = 'none';
-    hide('viewLogin'); hide('viewAdmin'); hide('viewUser');
+    hide('viewLogin'); hide('viewApp');
 
     // Charger les QCMs depuis JSONBin pour trouver le bon
     setRemoteStatus('Chargement du QCM…');
