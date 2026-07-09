@@ -481,7 +481,13 @@ textarea{resize:vertical;min-height:60px}
   <!-- QUIZ (utilisateur / créateur) -->
   <div id="userQuiz" class="hidden"><div id="quizList"></div></div>
   <div id="userHistory" class="hidden">
-    <div class="section-head"><h2>Mes résultats</h2><p>Historique de vos tentatives</p></div>
+    <div class="section-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div><h2>Mes résultats</h2><p>Historique de vos tentatives</p></div>
+      <button class="btn btn-sm" id="refreshHistoryBtn" onclick="refreshResults('history')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Rafraîchir
+      </button>
+    </div>
     <div id="historyList"></div>
   </div>
 
@@ -544,7 +550,13 @@ textarea{resize:vertical;min-height:60px}
 
   <!-- STATS -->
   <div id="adminStats" class="hidden">
-    <div class="section-head"><h2 id="statsTitle">Statistiques</h2><p id="statsSub">Résultats de toutes les tentatives</p></div>
+    <div class="section-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div><h2 id="statsTitle">Statistiques</h2><p id="statsSub">Résultats de toutes les tentatives</p></div>
+      <button class="btn btn-sm" id="refreshStatsBtn" onclick="refreshResults('stats')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+        Rafraîchir
+      </button>
+    </div>
     <div id="statsContent"></div>
   </div>
 
@@ -1485,6 +1497,29 @@ async function deleteAllAttempts(qcmId) {
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
+// ─── Rafraîchir les résultats (re-sync cloud → tous les profils) ──────────────
+async function refreshResults(tab) {
+  const btnId = tab === 'history' ? 'refreshHistoryBtn' : 'refreshStatsBtn';
+  const btn = $(btnId);
+  if (!isCloudEnabled()) {
+    showToast("Cloud non configuré : impossible de récupérer les résultats des autres profils.");
+    return;
+  }
+  const original = btn.innerHTML;
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px"></div> Rafraîchissement…';
+  try {
+    await syncFromCloud();
+    if (tab === 'history') renderHistory(); else renderStats();
+    showToast('Résultats à jour.');
+  } catch(e) {
+    showToast("Échec du rafraîchissement.");
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
 function renderStats() {
   $('statsSub').textContent = role === 'creator'
     ? 'Résultats des QCM que vous avez créés'
