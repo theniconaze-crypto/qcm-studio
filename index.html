@@ -666,7 +666,7 @@ textarea{resize:vertical;min-height:60px}
           </button>
         </div>
         <div style="font-size:11px;color:var(--text3);margin-top:6px">
-          ⚠ Ce lien contient votre clé JSONBin. Ne le partagez qu'avec la personne concernée et via un canal privé.
+          ⚠ Ce lien contient votre clé JSONBin. Ne le partagez qu'avec la personne concernée et via un canal privé. Il expire 24h après sa création.
         </div>
       </div>
       <div style="background:var(--success-bg);border:1px solid #1a4d30;border-radius:8px;padding:12px;font-size:12px;color:var(--success-light);line-height:1.7">
@@ -2127,7 +2127,9 @@ function generateShareLink() {
     // afin que le résultat du candidat distant lui soit bien rattaché et visible
     // dans son propre historique / ses stats une fois de retour dans l'appli.
     generatorProfileId: currentProfile ? currentProfile.id : null,
-    generatorRole: role
+    generatorRole: role,
+    // Horodatage de génération, utilisé pour expirer le lien au bout de 24h
+    createdAt: Date.now()
   };
   const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   const link = `${location.href.split('?')[0]}?token=${token}`;
@@ -2165,8 +2167,19 @@ function checkTokenInURL() {
   if (!token) return false;
   try {
     const payload = JSON.parse(decodeURIComponent(escape(atob(token))));
-    const { qcmId, userName, jbKey, binId, generatorProfileId, generatorRole } = payload;
+    const { qcmId, userName, jbKey, binId, generatorProfileId, generatorRole, createdAt } = payload;
     if (!qcmId || !userName || !jbKey || !binId) return false;
+
+    // Expiration du lien après 24h. Les liens générés avant cette mise à
+    // jour n'ont pas de createdAt : on les laisse fonctionner sans limite.
+    const LINK_VALIDITY_MS = 24 * 60 * 60 * 1000;
+    if (createdAt && (Date.now() - createdAt > LINK_VALIDITY_MS)) {
+      remoteMode = true;
+      document.querySelector('.header').style.display = 'none';
+      hide('viewLogin'); hide('viewApp');
+      setRemoteStatus('Ce lien a expiré (valable 24h). Demandez un nouveau lien à la personne qui vous l\'a envoyé.', true);
+      return true;
+    }
 
     remoteMode = true;
     remoteConfig = { jbKey, binId };
