@@ -233,6 +233,9 @@ textarea{resize:vertical;min-height:60px}
       <span id="apiKeyLabel">Clé API</span>
     </button>
     <span id="headerBadge" class="hidden"></span>
+    <button class="btn btn-sm hidden" id="myAccountBtn" onclick="openMyAccountModal()" title="Changer mon mot de passe">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+    </button>
     <button class="btn btn-sm hidden" id="logoutBtn" onclick="logout()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Déconnexion
@@ -256,19 +259,19 @@ textarea{resize:vertical;min-height:60px}
       <div class="login-card-title">Administrateur</div>
       <div class="login-card-desc">Créer et configurer des QCM, consulter les statistiques et les corrigés. Accès protégé par mot de passe.</div>
     </div>
-    <div class="login-card" onclick="openPasswordModal('creator')">
+    <div class="login-card" onclick="openProfileLoginModal('creator')">
       <div class="login-icon icon-creator">
         <svg viewBox="0 0 24 24" fill="none" stroke="#86efac" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
       </div>
       <div class="login-card-title">Créateur</div>
-      <div class="login-card-desc">Répondre aux QCM et consulter vos résultats, avec en plus la création et la gestion des QCM. Accès protégé par mot de passe.</div>
+      <div class="login-card-desc">Répondre aux QCM et consulter vos résultats, avec en plus la création et la gestion de vos propres QCM. Connexion avec identifiant + mot de passe.</div>
     </div>
-    <div class="login-card" onclick="login('user')">
+    <div class="login-card" onclick="openProfileLoginModal('user')">
       <div class="login-icon icon-user">
         <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
       <div class="login-card-title">Utilisateur</div>
-      <div class="login-card-desc">Répondre aux QCM disponibles et consulter vos résultats. Accès libre.</div>
+      <div class="login-card-desc">Répondre aux QCM qui vous ont été attribués et consulter vos résultats. Connexion avec identifiant + mot de passe.</div>
     </div>
   </div>
 </div>
@@ -338,6 +341,32 @@ textarea{resize:vertical;min-height:60px}
     <div class="modal-btns">
       <button class="btn btn-primary" onclick="checkPassword()" style="flex:1">Connexion</button>
       <button class="btn" onclick="closePwModal()">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE LOGIN MODAL (créateur / utilisateur) -->
+<div id="profileLoginModal" class="modal-overlay hidden">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-title">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      <span id="profileLoginTitle">Connexion</span>
+    </div>
+    <div class="modal-sub">Saisissez l'identifiant et le mot de passe fournis par l'administrateur.</div>
+    <div id="profileLoginError" class="modal-error hidden">Identifiant ou mot de passe incorrect.</div>
+    <div style="margin-bottom:12px">
+      <label>Identifiant</label>
+      <input type="text" id="profileLoginUser" placeholder="Ex: marie.dupont" onkeydown="if(event.key==='Enter')$('profileLoginPw').focus()">
+    </div>
+    <div class="pw-wrap">
+      <input type="password" id="profileLoginPw" placeholder="Mot de passe" onkeydown="if(event.key==='Enter')checkProfileLogin()">
+      <button class="pw-toggle" onclick="toggleField('profileLoginPw')" title="Afficher/masquer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div class="modal-btns" style="margin-top:16px">
+      <button class="btn btn-primary" onclick="checkProfileLogin()" style="flex:1">Connexion</button>
+      <button class="btn" onclick="closeProfileLoginModal()">Annuler</button>
     </div>
   </div>
 </div>
@@ -433,6 +462,10 @@ textarea{resize:vertical;min-height:60px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
       Réglages
     </button>
+    <button class="tab" id="tabProfiles" onclick="goTab('profiles')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Profils
+    </button>
   </div>
 
   <!-- QUIZ (utilisateur / créateur) -->
@@ -501,7 +534,7 @@ textarea{resize:vertical;min-height:60px}
 
   <!-- STATS -->
   <div id="adminStats" class="hidden">
-    <div class="section-head"><h2>Statistiques</h2><p>Résultats de toutes les tentatives</p></div>
+    <div class="section-head"><h2 id="statsTitle">Statistiques</h2><p id="statsSub">Résultats de toutes les tentatives</p></div>
     <div id="statsContent"></div>
   </div>
 
@@ -521,6 +554,21 @@ textarea{resize:vertical;min-height:60px}
   <div id="adminSettings" class="hidden">
     <div class="section-head"><h2>Réglages des résultats</h2><p>Personnalisez les 3 seuils, couleurs et commentaires appliqués aux résultats des QCM</p></div>
     <div id="settingsContent"></div>
+  </div>
+
+  <!-- PROFILES (admin uniquement) -->
+  <div id="adminProfiles" class="hidden">
+    <div class="section-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <h2>Profils</h2>
+        <p>Créez des comptes créateur ou utilisateur, gérez leurs mots de passe et leurs droits d'accès aux QCM</p>
+      </div>
+      <button class="btn btn-primary" onclick="openProfileModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Nouveau profil
+      </button>
+    </div>
+    <div id="profilesContent"></div>
   </div>
 
   <!-- Modale nom d'utilisateur -->
@@ -624,6 +672,74 @@ textarea{resize:vertical;min-height:60px}
     </div>
   </div>
 
+  <!-- Modale création/édition de profil -->
+  <div id="profileModal" class="modal-overlay hidden" onclick="if(event.target===this)closeProfileModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="width:460px;max-height:85vh;display:flex;flex-direction:column">
+      <div class="modal-title" id="profileModalTitle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Nouveau profil
+      </div>
+      <div class="modal-sub">Définissez l'identifiant, le mot de passe et le rôle de ce profil.</div>
+      <div id="profileModalError" class="modal-error hidden"></div>
+
+      <div style="overflow-y:auto;padding-right:2px">
+        <div style="margin-bottom:12px">
+          <label>Identifiant</label>
+          <input type="text" id="profileUsername" placeholder="Ex: marie.dupont">
+        </div>
+        <div style="margin-bottom:12px">
+          <label>Mot de passe</label>
+          <div class="pw-wrap" style="margin-bottom:0">
+            <input type="password" id="profilePassword" placeholder="Mot de passe">
+            <button class="pw-toggle" onclick="toggleField('profilePassword')" title="Afficher/masquer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+        <div style="margin-bottom:14px">
+          <label>Rôle</label>
+          <select id="profileRole" onchange="onProfileRoleChange()">
+            <option value="creator">Créateur — peut créer et gérer ses propres QCM</option>
+            <option value="user">Utilisateur — peut uniquement utiliser les QCM autorisés</option>
+          </select>
+        </div>
+
+        <div id="profileQcmRightsBlock">
+          <label style="margin-bottom:8px">Droits d'utilisation des QCM <span style="color:var(--text3);font-weight:400">(QCM que ce profil pourra afficher et lancer)</span></label>
+          <div id="profileQcmList" style="display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--surface2)"></div>
+        </div>
+      </div>
+
+      <div class="modal-btns" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="saveProfileForm()" style="flex:1">Enregistrer</button>
+        <button class="btn" onclick="closeProfileModal()">Annuler</button>
+        <button class="btn btn-danger btn-sm" id="profileDeleteBtn" style="display:none" onclick="deleteProfileFromModal()">Supprimer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modale changement de mon mot de passe (créateur / utilisateur) -->
+  <div id="myAccountModal" class="modal-overlay hidden" onclick="if(event.target===this)hide('myAccountModal')">
+    <div class="modal" onclick="event.stopPropagation()">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Mon compte
+      </div>
+      <div class="modal-sub" id="myAccountSub">Modifiez votre mot de passe.</div>
+      <div id="myAccountError" class="modal-error hidden">Veuillez saisir un nouveau mot de passe.</div>
+      <div class="pw-wrap">
+        <input type="password" id="myAccountPw" placeholder="Nouveau mot de passe" onkeydown="if(event.key==='Enter')saveMyPassword()">
+        <button class="pw-toggle" onclick="toggleField('myAccountPw')" title="Afficher/masquer">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
+      <div class="modal-btns">
+        <button class="btn btn-primary" onclick="saveMyPassword()" style="flex:1">Enregistrer</button>
+        <button class="btn" onclick="hide('myAccountModal')">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <div id="quizTaking" class="hidden">
     <div class="progress-wrap">
       <div class="progress-label">
@@ -708,6 +824,7 @@ function scoreInfo(score) {
 
 // ─── State ───────────────────────────────────────────────────────────────────
 let role = null, questions = [], currentQCM = null;
+let currentProfile = null; // profil { id, username, password, role, allowedQcmIds } du créateur/utilisateur connecté (null pour admin)
 let pendingLoginRole = null;
 let editingQcmId = null;
 let currentQIdx = 0, userAnswers = [], timerInterval = null, timeLeft = 0;
@@ -717,6 +834,7 @@ let currentUsername = '';
 const KEY_QCMS     = 'qcm_studio_v2_qcms';
 const KEY_ATTEMPTS = 'qcm_studio_v2_attempts';
 const KEY_SCORE_SETTINGS = 'qcm_studio_v2_score_settings';
+const KEY_PROFILES = 'qcm_studio_v2_profiles';
 const KEY_JB_KEY   = 'qcm_jsonbin_masterkey';
 const KEY_JB_BIN   = 'qcm_jsonbin_binid';
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
@@ -748,6 +866,8 @@ const localGetScoreSettings = () => {
   } catch(e) { return JSON.parse(JSON.stringify(DEFAULT_SCORE_SETTINGS)); }
 };
 const localSaveScoreSettings = a => localStorage.setItem(KEY_SCORE_SETTINGS, JSON.stringify(a));
+const localGetProfiles = () => { try { return JSON.parse(localStorage.getItem(KEY_PROFILES)||'[]'); } catch(e){ return []; }};
+const localSaveProfiles = a => localStorage.setItem(KEY_PROFILES, JSON.stringify(a));
 
 // Cloud R/W
 async function cloudRead() {
@@ -779,6 +899,7 @@ async function syncFromCloud() {
     if (record?.qcms)          localSaveQCMs(record.qcms);
     if (record?.attempts)      localSaveAttempts(record.attempts);
     if (record?.scoreSettings) localSaveScoreSettings(record.scoreSettings);
+    if (record?.profiles)      localSaveProfiles(record.profiles);
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Sync cloud échouée, mode local', e);
@@ -791,7 +912,7 @@ async function pushToCloud() {
   if (!isCloudEnabled()) return;
   setCloudStatus('syncing', 'Sauvegarde…');
   try {
-    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings() });
+    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles() });
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Push cloud échoué', e);
@@ -809,9 +930,11 @@ function setCloudStatus(state, label) {
 const getQCMs     = () => localGetQCMs();
 const getAttempts = () => localGetAttempts();
 const getScoreSettings = () => localGetScoreSettings();
+const getProfiles = () => localGetProfiles();
 async function saveQCMs(a)     { localSaveQCMs(a);     await pushToCloud(); }
 async function saveAttempts(a) { localSaveAttempts(a); await pushToCloud(); }
 async function saveScoreSettings(a) { localSaveScoreSettings(a); await pushToCloud(); }
+async function saveProfiles(a) { localSaveProfiles(a); await pushToCloud(); }
 
 function showToast(msg) {
   const t = $('toast');
@@ -860,7 +983,7 @@ async function connectCloud() {
           'X-Bin-Name': 'QCM Studio',
           'X-Bin-Private': 'true'
         },
-        body: JSON.stringify({ qcms: localGetQCMs(), attempts: localGetAttempts() })
+        body: JSON.stringify({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles() })
       });
       if (!res.ok) {
         const err = await res.json().catch(()=>({}));
@@ -880,6 +1003,7 @@ async function connectCloud() {
       // Importer les données cloud en local
       if (data.record?.qcms)     localSaveQCMs(data.record.qcms);
       if (data.record?.attempts) localSaveAttempts(data.record.attempts);
+      if (data.record?.profiles) localSaveProfiles(data.record.profiles);
       $('cloudSuccessMsg').textContent = `Connecté au bin ${binId}. Données cloud importées.`;
     }
 
@@ -940,18 +1064,20 @@ $('pwModal').addEventListener('click', e => { if (e.target === $('pwModal')) clo
 // ni aux corrigés globaux (réservés à l'administrateur).
 const ROLE_LABELS  = { admin: 'Administrateur', creator: 'Créateur', user: 'Utilisateur' };
 const ROLE_BADGES  = { admin: 'badge-admin', creator: 'badge-creator', user: 'badge-user' };
-const ROLE_TABS    = { admin: ['create','stats','corrige','manage','settings'], creator: ['quiz','history','create','manage'], user: ['quiz','history'] };
-const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage', settings:'adminSettings' };
+const ROLE_TABS    = { admin: ['create','stats','corrige','manage','settings','profiles'], creator: ['quiz','history','create','manage','stats'], user: ['quiz','history'] };
+const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage', settings:'adminSettings', profiles:'adminProfiles' };
 
 // ─── Login / logout ───────────────────────────────────────────────────────────
-function login(r) {
+function login(r, profile) {
   role = r;
+  currentProfile = profile || null;
   hide('viewLogin');
   const badge = $('headerBadge');
-  badge.textContent = ROLE_LABELS[r] || r;
+  badge.textContent = currentProfile ? `${ROLE_LABELS[r] || r} — ${currentProfile.username}` : (ROLE_LABELS[r] || r);
   badge.className = 'badge ' + (ROLE_BADGES[r] || 'badge-user');
   badge.classList.remove('hidden');
   show('logoutBtn');
+  if (currentProfile) show('myAccountBtn'); else hide('myAccountBtn');
   show('viewApp');
   applyRoleTabs(r);
   const defaultTab = ROLE_TABS[r][0];
@@ -965,11 +1091,38 @@ function login(r) {
   goTab(defaultTab);
 }
 function logout() {
-  role = null; questions = []; currentQCM = null; editingQcmId = null;
+  role = null; questions = []; currentQCM = null; editingQcmId = null; currentProfile = null;
   clearInterval(timerInterval);
-  ['viewApp','logoutBtn','headerBadge','apiKeyBtn','cloudBtn'].forEach(hide);
+  ['viewApp','logoutBtn','headerBadge','apiKeyBtn','cloudBtn','myAccountBtn'].forEach(hide);
   show('viewLogin');
   resetForm();
+}
+
+// ─── Connexion par profil (créateur / utilisateur) ────────────────────────────
+function openProfileLoginModal(r) {
+  pendingLoginRole = r;
+  $('profileLoginTitle').textContent = r === 'creator' ? 'Accès créateur' : 'Accès utilisateur';
+  $('profileLoginUser').value = '';
+  $('profileLoginPw').value = '';
+  hide('profileLoginError');
+  show('profileLoginModal');
+  setTimeout(() => $('profileLoginUser').focus(), 80);
+}
+function closeProfileLoginModal() { hide('profileLoginModal'); }
+$('profileLoginModal').addEventListener('click', e => { if (e.target === $('profileLoginModal')) closeProfileLoginModal(); });
+
+async function checkProfileLogin() {
+  // On synchronise d'abord le cloud si configuré, pour avoir la liste de profils à jour
+  if (isCloudEnabled()) { try { await syncFromCloud(); } catch(e) {} }
+  const username = $('profileLoginUser').value.trim();
+  const pw = $('profileLoginPw').value;
+  const profile = getProfiles().find(p => p.role === pendingLoginRole && p.username === username && p.password === pw);
+  if (profile) {
+    hide('profileLoginModal');
+    login(pendingLoginRole, profile);
+  } else {
+    show('profileLoginError');
+  }
 }
 
 // Affiche uniquement les onglets autorisés pour le rôle courant
@@ -995,6 +1148,7 @@ function goTab(t) {
   if (t==='corrige') renderCorrige();
   if (t==='manage') renderManage();
   if (t==='settings') renderSettings();
+  if (t==='profiles') renderProfiles();
 }
 const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 
@@ -1052,13 +1206,14 @@ async function saveQCM() {
   const desc = $('qcmDesc').value;
 
   if (editingQcmId !== null) {
-    // Mode modification : on met à jour le QCM existant (id et date de création conservés)
+    // Mode modification : on met à jour le QCM existant (id, propriétaire et date de création conservés)
     const idx = qcms.findIndex(q => q.id === editingQcmId);
     if (idx === -1) {
       alert("Ce QCM n'existe plus — il a peut-être été supprimé entre-temps.");
       cancelEditQCM();
       return;
     }
+    if (!canManageQcm(qcms[idx])) { alert("Vous n'avez pas le droit de modifier ce QCM."); return; }
     qcms[idx] = { ...qcms[idx], title, desc, duration, questions: cleanQuestions };
     await saveQCMs(qcms);
     showToast('QCM mis à jour avec succès !');
@@ -1066,7 +1221,8 @@ async function saveQCM() {
     qcms.push({
       id: Date.now(), title, desc, duration,
       questions: cleanQuestions,
-      createdAt: new Date().toLocaleDateString('fr-FR')
+      createdAt: new Date().toLocaleDateString('fr-FR'),
+      ownerId: currentProfile ? currentProfile.id : 'admin'
     });
     await saveQCMs(qcms);
     showToast('QCM enregistré avec succès !');
@@ -1087,6 +1243,7 @@ function resetForm() {
 function editQCM(id) {
   const qcm = getQCMs().find(q => q.id === id);
   if (!qcm) return;
+  if (!canManageQcm(qcm)) { alert("Vous n'avez pas le droit de modifier ce QCM."); return; }
   editingQcmId = id;
   $('qcmTitle').value = qcm.title || '';
   $('qcmDesc').value = qcm.desc || '';
@@ -1296,11 +1453,12 @@ async function generateWithAI() {
 }
 
 // ─── Delete attempt ───────────────────────────────────────────────────────────
-async function deleteAttempt(reversedIdx, from) {
+async function deleteAttempt(attemptId, from) {
+  const a = getAttempts().find(x => x.id === attemptId);
+  if (!a) return;
+  if (!canViewAttempt(a)) { alert("Vous n'avez pas le droit de supprimer ce résultat."); return; }
   if (!confirm('Supprimer ce résultat ? Cette action est irréversible.')) return;
-  const attempts = getAttempts();
-  const realIdx = attempts.length - 1 - reversedIdx;
-  attempts.splice(realIdx, 1);
+  const attempts = getAttempts().filter(x => x.id !== attemptId);
   await saveAttempts(attempts);
   showToast('Résultat supprimé.');
   if (from === 'history') renderHistory();
@@ -1317,28 +1475,26 @@ async function deleteAllAttempts(qcmId) {
 }
 
 // ─── Stats ────────────────────────────────────────────────────────────────────
-function openDetailAdmin(attemptIdx) {
-  // Dans les stats, les attempts ne sont pas inversés
-  const a = getAttempts()[attemptIdx];
-  if (!a) return;
-  // On réutilise openDetail en passant par un index dans la liste inversée
-  const reversed = getAttempts().slice().reverse();
-  const ri = reversed.findIndex((x, i) => getAttempts()[attemptIdx] === x || (x.qcmId===a.qcmId && x.date===a.date && x.userName===a.userName && x.score===a.score));
-  openDetail(ri >= 0 ? ri : 0);
-}
-
 function renderStats() {
-  const qcms = getQCMs(), attempts = getAttempts(), el = $('statsContent');
-  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Aucun QCM créé.</div>'; return; }
-  const total_att = attempts.length;
+  $('statsSub').textContent = role === 'creator'
+    ? 'Résultats des QCM que vous avez créés'
+    : 'Résultats de toutes les tentatives';
+  const allQcms = getQCMs();
+  // Admin : tous les QCM. Créateur : uniquement les QCM qu'il a créés (mais tous les résultats de ces QCM).
+  const qcms = role === 'admin' ? allQcms : allQcms.filter(q => canManageQcm(q));
+  const attempts = getAttempts(), el = $('statsContent');
+  if (!qcms.length) {
+    const msg = role === 'creator' ? "Vous n'avez pas encore créé de QCM." : 'Aucun QCM créé.';
+    el.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>${msg}</div>`;
+    return;
+  }
   el.innerHTML = qcms.map(qcm => {
-    const att = attempts.map((a, globalIdx) => ({a, globalIdx})).filter(({a}) => a.qcmId === qcm.id);
-    const scores = att.map(({a}) => a.score);
+    const att = attempts.filter(a => a.qcmId === qcm.id);
+    const scores = att.map(a => a.score);
     const avg  = att.length ? Math.round(scores.reduce((s,v) => s+v, 0) / att.length) : null;
     const best = att.length ? Math.max(...scores) : null;
 
-    const attRows = att.length ? att.map(({a, globalIdx}) => {
-      const ri = total_att - 1 - globalIdx;
+    const attRows = att.length ? att.map(a => {
       const si = scoreInfo(a.score);
       return '<div class="attempt-row">'
         + '<span style="display:flex;align-items:center;gap:5px;font-weight:600">'
@@ -1347,9 +1503,9 @@ function renderStats() {
         + '<span style="color:var(--text3);font-size:12px">' + a.date + '</span>'
         + '<span class="attempt-score" style="color:' + si.fg + '">' + a.score + '% (' + a.correct + '/' + a.total + ')</span>'
         + '<span class="tag" style="background:' + si.bg + ';color:' + si.fg + '">' + si.tagLabel + ' — ' + si.label + '</span>'
-        + '<button class="btn btn-sm" onclick="openDetail(' + ri + ')" style="font-size:11px;padding:4px 10px;flex-shrink:0">'
+        + '<button class="btn btn-sm" onclick="openDetail(\'' + a.id + '\')" style="font-size:11px;padding:4px 10px;flex-shrink:0">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Détail</button>'
-        + '<button class="btn btn-sm" onclick="deleteAttempt(' + ri + ',\'stats\')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer">'
+        + '<button class="btn btn-sm" onclick="deleteAttempt(\'' + a.id + '\',\'stats\')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>'
         + '</div>';
     }).join('') : '<div style="font-size:12px;color:var(--text3);padding:4px 0">Aucune tentative.</div>';
@@ -1483,13 +1639,19 @@ function renderCorrige() {
 
 // ─── Manage ───────────────────────────────────────────────────────────────────
 function renderManage() {
-  const qcms = getQCMs(), el = $('manageContent');
-  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>Aucun QCM à gérer.</div>'; return; }
+  const all = getQCMs();
+  const qcms = role === 'admin' ? all : all.filter(q => canManageQcm(q));
+  const el = $('manageContent');
+  if (!qcms.length) {
+    const msg = role === 'creator' ? "Vous n'avez pas encore créé de QCM." : 'Aucun QCM à gérer.';
+    el.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>${msg}</div>`;
+    return;
+  }
   el.innerHTML = qcms.map(qcm=>`
     <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div>
         <div style="font-weight:600;margin-bottom:3px">${qcm.title}</div>
-        <div style="font-size:12px;color:var(--text2)">${qcm.questions.length} question${qcm.questions.length>1?'s':''} · Créé le ${qcm.createdAt}</div>
+        <div style="font-size:12px;color:var(--text2)">${qcm.questions.length} question${qcm.questions.length>1?'s':''} · Créé le ${qcm.createdAt}${role === 'admin' ? ' · Par '+escapeHtml(ownerLabel(qcm)) : ''}</div>
       </div>
       <div class="btn-group">
         <button class="btn btn-sm" onclick="editQCM(${qcm.id})">
@@ -1504,12 +1666,204 @@ function renderManage() {
     </div>`).join('');
 }
 async function deleteQCM(id) {
+  const qcm = getQCMs().find(q => q.id === id);
+  if (!qcm) return;
+  if (!canManageQcm(qcm)) { alert("Vous n'avez pas le droit de supprimer ce QCM."); return; }
   if (!confirm('Supprimer ce QCM ? Cette action est irréversible.')) return;
   await saveQCMs(getQCMs().filter(q=>q.id!==id));
   await saveAttempts(getAttempts().filter(a=>a.qcmId!==id));
+  // Retire ce QCM des droits d'utilisation des profils qui l'avaient
+  const profiles = getProfiles();
+  let profilesChanged = false;
+  profiles.forEach(p => {
+    if (Array.isArray(p.allowedQcmIds) && p.allowedQcmIds.includes(id)) {
+      p.allowedQcmIds = p.allowedQcmIds.filter(qid => qid !== id);
+      profilesChanged = true;
+    }
+  });
+  if (profilesChanged) await saveProfiles(profiles);
   if (editingQcmId === id) resetForm(); // le QCM en cours d'édition vient d'être supprimé
   showToast('QCM supprimé.');
   renderManage();
+}
+
+// ─── Droits d'accès aux QCM ────────────────────────────────────────────────────
+// Admin : tout droit sur tous les QCM.
+// Créateur : création libre + modification/suppression uniquement de ses propres QCM.
+// Utilisateur : uniquement un droit d'utilisation (afficher/lancer) sur les QCM qui lui sont attribués, jamais de modification/suppression.
+function canManageQcm(qcm) {
+  if (role === 'admin') return true;
+  if (role === 'creator') return !!currentProfile && qcm.ownerId === currentProfile.id;
+  return false;
+}
+function canUseQcm(qcm) {
+  if (role === 'admin' || role === 'creator') return true;
+  if (role === 'user') return !!currentProfile && Array.isArray(currentProfile.allowedQcmIds) && currentProfile.allowedQcmIds.includes(qcm.id);
+  return false;
+}
+function ownerLabel(qcm) {
+  if (!qcm.ownerId || qcm.ownerId === 'admin') return 'Administrateur';
+  const p = getProfiles().find(p => p.id === qcm.ownerId);
+  return p ? p.username : 'Créateur supprimé';
+}
+
+// Résultats visibles :
+// - Admin : tous les résultats.
+// - Créateur : ses propres tentatives (en tant que candidat) + toutes les tentatives des QCM qu'il a créés.
+// - Utilisateur : uniquement ses propres tentatives.
+function canViewAttempt(a) {
+  if (role === 'admin') return true;
+  if (role === 'creator') {
+    if (currentProfile && a.profileId === currentProfile.id) return true;
+    const qcm = getQCMs().find(q => q.id === a.qcmId);
+    return !!(qcm && canManageQcm(qcm));
+  }
+  if (role === 'user') return !!currentProfile && a.profileId === currentProfile.id;
+  return false;
+}
+
+// ─── Profils (comptes créateur / utilisateur) ─────────────────────────────────
+let editingProfileId = null;
+
+function genProfileId() { return 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+function genAttemptId() { return 'a_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+function renderProfiles() {
+  const profiles = getProfiles(), el = $('profilesContent');
+  if (!profiles.length) {
+    el.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+      Aucun profil créé. Utilisez « Nouveau profil » pour créer des comptes créateur ou utilisateur.</div>`;
+    return;
+  }
+  el.innerHTML = profiles.map(p => {
+    const isCreator = p.role === 'creator';
+    const badgeClass = isCreator ? 'badge-creator' : 'badge-user';
+    const rightsInfo = isCreator
+      ? `Droit de créer, modifier et supprimer ses propres QCM`
+      : `Droit d'utilisation sur ${(p.allowedQcmIds||[]).length} QCM`;
+    return `
+    <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <span style="font-weight:600">${escapeHtml(p.username)}</span>
+          <span class="badge ${badgeClass}" style="font-size:10px">${isCreator ? 'Créateur' : 'Utilisateur'}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text2)">${rightsInfo}</div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-sm" onclick="openProfileModal('${p.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          Modifier
+        </button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProfile('${p.id}')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          Supprimer
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderProfileQcmChecklist(selectedIds) {
+  const qcms = getQCMs();
+  const sel = new Set(selectedIds || []);
+  const el = $('profileQcmList');
+  if (!qcms.length) {
+    el.innerHTML = `<div style="font-size:12px;color:var(--text3)">Aucun QCM n'existe encore.</div>`;
+    return;
+  }
+  el.innerHTML = qcms.map(q => `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;cursor:pointer;margin-bottom:0">
+      <input type="checkbox" class="profile-qcm-check" value="${q.id}" ${sel.has(q.id) ? 'checked' : ''} style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+      <span>${escapeHtml(q.title)}</span>
+    </label>`).join('');
+}
+
+function onProfileRoleChange() {
+  const r = $('profileRole').value;
+  $('profileQcmRightsBlock').style.display = r === 'user' ? 'block' : 'none';
+}
+
+function openProfileModal(id) {
+  editingProfileId = id || null;
+  hide('profileModalError');
+  const p = id ? getProfiles().find(x => x.id === id) : null;
+
+  $('profileModalTitle').innerHTML = $('profileModalTitle').innerHTML.replace(/Nouveau profil|Modifier le profil/, id ? 'Modifier le profil' : 'Nouveau profil');
+  $('profileUsername').value = p ? p.username : '';
+  $('profilePassword').value = p ? p.password : '';
+  $('profileRole').value = p ? p.role : 'creator';
+  onProfileRoleChange();
+  renderProfileQcmChecklist(p ? p.allowedQcmIds : []);
+  $('profileDeleteBtn').style.display = id ? 'inline-flex' : 'none';
+  show('profileModal');
+  setTimeout(() => $('profileUsername').focus(), 80);
+}
+function closeProfileModal() { hide('profileModal'); editingProfileId = null; }
+
+async function saveProfileForm() {
+  const username = $('profileUsername').value.trim();
+  const password = $('profilePassword').value;
+  const roleVal = $('profileRole').value;
+  const errEl = $('profileModalError');
+  hide('profileModalError');
+
+  if (!username) { errEl.textContent = "Saisissez un identifiant."; show('profileModalError'); return; }
+  if (!password) { errEl.textContent = "Saisissez un mot de passe."; show('profileModalError'); return; }
+
+  const profiles = getProfiles();
+  const dup = profiles.find(p => p.username === username && p.id !== editingProfileId);
+  if (dup) { errEl.textContent = "Cet identifiant est déjà utilisé par un autre profil."; show('profileModalError'); return; }
+
+  const allowedQcmIds = roleVal === 'user'
+    ? Array.from(document.querySelectorAll('.profile-qcm-check:checked')).map(el => Number(el.value))
+    : [];
+
+  if (editingProfileId) {
+    const idx = profiles.findIndex(p => p.id === editingProfileId);
+    if (idx !== -1) profiles[idx] = { ...profiles[idx], username, password, role: roleVal, allowedQcmIds };
+  } else {
+    profiles.push({ id: genProfileId(), username, password, role: roleVal, allowedQcmIds });
+  }
+  await saveProfiles(profiles);
+  closeProfileModal();
+  renderProfiles();
+  showToast(editingProfileId ? 'Profil mis à jour.' : 'Profil créé.');
+}
+
+async function deleteProfile(id) {
+  if (!confirm('Supprimer ce profil ? Ce compte ne pourra plus se connecter.')) return;
+  await saveProfiles(getProfiles().filter(p => p.id !== id));
+  renderProfiles();
+  showToast('Profil supprimé.');
+}
+async function deleteProfileFromModal() {
+  if (!editingProfileId) return;
+  await deleteProfile(editingProfileId);
+  closeProfileModal();
+}
+
+// ─── Mon compte (changement de mot de passe créateur / utilisateur) ──────────
+function openMyAccountModal() {
+  if (!currentProfile) return;
+  $('myAccountSub').textContent = `Compte : ${currentProfile.username}`;
+  $('myAccountPw').value = '';
+  hide('myAccountError');
+  show('myAccountModal');
+  setTimeout(() => $('myAccountPw').focus(), 80);
+}
+async function saveMyPassword() {
+  const pw = $('myAccountPw').value;
+  if (!pw) { show('myAccountError'); return; }
+  const profiles = getProfiles();
+  const idx = profiles.findIndex(p => p.id === currentProfile.id);
+  if (idx === -1) { hide('myAccountModal'); return; }
+  profiles[idx] = { ...profiles[idx], password: pw };
+  await saveProfiles(profiles);
+  currentProfile = profiles[idx];
+  hide('myAccountModal');
+  showToast('Mot de passe mis à jour.');
 }
 
 // ─── Réglages : seuils / couleurs / commentaires des résultats ────────────────
@@ -1639,8 +1993,16 @@ function resetSettingsForm() {
 
 // ─── Quiz list ────────────────────────────────────────────────────────────────
 function renderQuizList() {
-  const qcms = getQCMs(), el = $('quizList');
-  if (!qcms.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>Aucun QCM disponible. L\'administrateur doit en créer un.</div>'; return; }
+  const all = getQCMs();
+  const qcms = all.filter(q => canUseQcm(q));
+  const el = $('quizList');
+  if (!qcms.length) {
+    const msg = role === 'user'
+      ? "Aucun QCM ne vous a été attribué pour l'instant. Contactez l'administrateur."
+      : "Aucun QCM disponible. L'administrateur doit en créer un.";
+    el.innerHTML = `<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>${msg}</div>`;
+    return;
+  }
   el.innerHTML = qcms.map(qcm=>`
     <div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
       <div style="flex:1">
@@ -1662,6 +2024,7 @@ let remoteConfig = null; // { jbKey, binId } pour push direct
 function startQuiz(id) {
   const qcm = getQCMs().find(q => q.id === id);
   if (!qcm) return;
+  if (!canUseQcm(qcm)) { alert("Vous n'avez pas le droit d'utiliser ce QCM."); return; }
   currentQCM = qcm;
   $('usernameInput').value = localStorage.getItem('qcm_last_username') || '';
   $('usernameModalSub').textContent = `QCM : "${qcm.title}"`;
@@ -1877,7 +2240,13 @@ async function finishQuiz() {
     text: q.text, options: q.options, correct: q.correct,
     given: userAnswers[i] !== undefined ? userAnswers[i] : null
   }));
-  const attempt = { qcmId:currentQCM.id, qcmTitle:currentQCM.title, score, correct, total, date:new Date().toLocaleDateString('fr-FR'), userName:currentUsername, details };
+  const attempt = {
+    id: genAttemptId(),
+    qcmId:currentQCM.id, qcmTitle:currentQCM.title, score, correct, total,
+    date:new Date().toLocaleDateString('fr-FR'), userName:currentUsername,
+    profileId: currentProfile ? currentProfile.id : null,
+    details
+  };
 
   if (remoteMode && remoteConfig) {
     // Cacher la zone quiz, afficher la zone résultat
@@ -1944,10 +2313,10 @@ async function finishQuiz() {
 function backToList() { hide('quizResult'); show('userQuiz'); renderQuizList(); }
 
 // ─── Detail modal ─────────────────────────────────────────────────────────────
-function openDetail(attemptIdx) {
-  const attempts = getAttempts().slice().reverse();
-  const a = attempts[attemptIdx];
+function openDetail(attemptId) {
+  const a = getAttempts().find(x => x.id === attemptId);
   if (!a) return;
+  if (!canViewAttempt(a)) { alert("Vous n'avez pas le droit de consulter ce résultat."); return; }
 
   const si = scoreInfo(a.score);
   const color = si.fg, bg = si.bg;
@@ -2011,9 +2380,11 @@ function openDetail(attemptIdx) {
 
 // ─── History ──────────────────────────────────────────────────────────────────
 function renderHistory() {
-  const att = getAttempts().slice().reverse(), el = $('historyList');
+  const all = getAttempts().slice().reverse();
+  const att = currentProfile ? all.filter(a => a.profileId === currentProfile.id) : all;
+  const el = $('historyList');
   if (!att.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Aucune tentative pour l\'instant.</div>'; return; }
-  el.innerHTML = att.map((a, i) => {
+  el.innerHTML = att.map((a) => {
     const si = scoreInfo(a.score);
     return `
     <div class="attempt-row" style="cursor:default">
@@ -2025,11 +2396,11 @@ function renderHistory() {
       <span class="attempt-score" style="color:${si.fg}">${a.score}%</span>
       <span class="tag" style="background:${si.bg};color:${si.fg}">${si.tagLabel} — ${si.label}</span>
       <span style="color:var(--text3);font-size:12px">${a.date}</span>
-      <button class="btn btn-sm" onclick="openDetail(${i})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
+      <button class="btn btn-sm" onclick="openDetail('${a.id}')" style="font-size:11px;padding:4px 10px;flex-shrink:0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Détail
       </button>
-      <button class="btn btn-sm" onclick="deleteAttempt(${i},'history')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer ce résultat">
+      <button class="btn btn-sm" onclick="deleteAttempt('${a.id}','history')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer ce résultat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       </button>
     </div>`;
