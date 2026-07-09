@@ -429,6 +429,10 @@ textarea{resize:vertical;min-height:60px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
       Corrigés
     </button>
+    <button class="tab" id="tabSettings" onclick="goTab('settings')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      Réglages
+    </button>
   </div>
 
   <!-- QUIZ (utilisateur / créateur) -->
@@ -511,6 +515,12 @@ textarea{resize:vertical;min-height:60px}
   <div id="adminManage" class="hidden">
     <div class="section-head"><h2>Gérer les QCM</h2><p>Modifier ou supprimer les QCM existants</p></div>
     <div id="manageContent"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="adminSettings" class="hidden">
+    <div class="section-head"><h2>Réglages des résultats</h2><p>Personnalisez les 3 seuils, couleurs et commentaires appliqués aux résultats des QCM</p></div>
+    <div id="settingsContent"></div>
   </div>
 
   <!-- Modale nom d'utilisateur -->
@@ -677,11 +687,23 @@ const hide = id => $(id).classList.add('hidden');
 const ADMIN_PASSWORD = 'totototo';
 const CREATOR_PASSWORD = 'createur123';
 
-// Barème des résultats : rouge = insuffisant/échoué, jaune = pas mal/réussi, vert = excellent/réussi
+// Barème des résultats : configurable par l'administrateur (onglet "Réglages")
+function hexToRgba(hex, alpha) {
+  hex = (hex || '#888888').replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+  const r = parseInt(hex.substring(0,2),16) || 0, g = parseInt(hex.substring(2,4),16) || 0, b = parseInt(hex.substring(4,6),16) || 0;
+  return `rgba(${r},${g},${b},${alpha})`;
+}
 function scoreInfo(score) {
-  if (score >= 75) return { level:'good', passed:true,  label:'Excellent', resultTitle:'Excellent travail !', tagLabel:'Réussi',  tagClass:'tag-ok',   fg:'var(--success-light)', bg:'var(--success-bg)', border:'#1a4d30', main:'var(--success)' };
-  if (score >= 60) return { level:'mid',  passed:true,  label:'Pas mal',   resultTitle:'Pas mal !',           tagLabel:'Réussi',  tagClass:'tag-warn', fg:'var(--warning-light)', bg:'var(--warning-bg)', border:'#4d3a0a', main:'var(--warning)' };
-  return                { level:'bad',  passed:false, label:'Insuffisant', resultTitle:'À revoir…',          tagLabel:'Échoué',  tagClass:'tag-bad',  fg:'var(--danger-light)',  bg:'var(--danger-bg)',  border:'#4d1f1f', main:'var(--danger)' };
+  const tiers = getScoreSettings();
+  const sorted = [...tiers].sort((a,b) => b.min - a.min);
+  const t = sorted.find(x => score >= x.min) || sorted[sorted.length-1];
+  return {
+    level: t.key, passed: !!t.passed, label: t.label,
+    resultTitle: t.passed ? `${t.label} !` : `${t.label}…`,
+    tagLabel: t.passed ? 'Réussi' : 'Échoué',
+    fg: t.color, bg: hexToRgba(t.color, 0.16), border: hexToRgba(t.color, 0.4), main: t.color
+  };
 }
 
 // ─── State ───────────────────────────────────────────────────────────────────
@@ -694,9 +716,16 @@ let currentUsername = '';
 // ─── Storage — Cloud (JSONBin) + localStorage fallback ────────────────────────
 const KEY_QCMS     = 'qcm_studio_v2_qcms';
 const KEY_ATTEMPTS = 'qcm_studio_v2_attempts';
+const KEY_SCORE_SETTINGS = 'qcm_studio_v2_score_settings';
 const KEY_JB_KEY   = 'qcm_jsonbin_masterkey';
 const KEY_JB_BIN   = 'qcm_jsonbin_binid';
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+
+const DEFAULT_SCORE_SETTINGS = [
+  { key:'bad',  min:0,  color:'#ef4444', label:'Insuffisant', passed:false },
+  { key:'mid',  min:60, color:'#f59e0b', label:'Pas mal',      passed:true  },
+  { key:'good', min:75, color:'#22c55e', label:'Excellent',    passed:true  }
+];
 
 function getJBConfig() {
   return {
@@ -711,6 +740,14 @@ const localGetQCMs     = () => { try { return JSON.parse(localStorage.getItem(KE
 const localGetAttempts = () => { try { return JSON.parse(localStorage.getItem(KEY_ATTEMPTS)||'[]'); } catch(e){ return []; }};
 const localSaveQCMs    = a => localStorage.setItem(KEY_QCMS, JSON.stringify(a));
 const localSaveAttempts= a => localStorage.setItem(KEY_ATTEMPTS, JSON.stringify(a));
+const localGetScoreSettings = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY_SCORE_SETTINGS));
+    if (!Array.isArray(raw) || raw.length !== 3) return JSON.parse(JSON.stringify(DEFAULT_SCORE_SETTINGS));
+    return raw;
+  } catch(e) { return JSON.parse(JSON.stringify(DEFAULT_SCORE_SETTINGS)); }
+};
+const localSaveScoreSettings = a => localStorage.setItem(KEY_SCORE_SETTINGS, JSON.stringify(a));
 
 // Cloud R/W
 async function cloudRead() {
@@ -739,8 +776,9 @@ async function syncFromCloud() {
   setCloudStatus('syncing', 'Sync…');
   try {
     const record = await cloudRead();
-    if (record?.qcms)     localSaveQCMs(record.qcms);
-    if (record?.attempts) localSaveAttempts(record.attempts);
+    if (record?.qcms)          localSaveQCMs(record.qcms);
+    if (record?.attempts)      localSaveAttempts(record.attempts);
+    if (record?.scoreSettings) localSaveScoreSettings(record.scoreSettings);
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Sync cloud échouée, mode local', e);
@@ -753,7 +791,7 @@ async function pushToCloud() {
   if (!isCloudEnabled()) return;
   setCloudStatus('syncing', 'Sauvegarde…');
   try {
-    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts() });
+    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings() });
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Push cloud échoué', e);
@@ -770,8 +808,10 @@ function setCloudStatus(state, label) {
 // Wrappers publics utilisés dans tout le reste du code
 const getQCMs     = () => localGetQCMs();
 const getAttempts = () => localGetAttempts();
+const getScoreSettings = () => localGetScoreSettings();
 async function saveQCMs(a)     { localSaveQCMs(a);     await pushToCloud(); }
 async function saveAttempts(a) { localSaveAttempts(a); await pushToCloud(); }
+async function saveScoreSettings(a) { localSaveScoreSettings(a); await pushToCloud(); }
 
 function showToast(msg) {
   const t = $('toast');
@@ -900,8 +940,8 @@ $('pwModal').addEventListener('click', e => { if (e.target === $('pwModal')) clo
 // ni aux corrigés globaux (réservés à l'administrateur).
 const ROLE_LABELS  = { admin: 'Administrateur', creator: 'Créateur', user: 'Utilisateur' };
 const ROLE_BADGES  = { admin: 'badge-admin', creator: 'badge-creator', user: 'badge-user' };
-const ROLE_TABS    = { admin: ['create','stats','corrige','manage'], creator: ['quiz','history','create','manage'], user: ['quiz','history'] };
-const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage' };
+const ROLE_TABS    = { admin: ['create','stats','corrige','manage','settings'], creator: ['quiz','history','create','manage'], user: ['quiz','history'] };
+const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage', settings:'adminSettings' };
 
 // ─── Login / logout ───────────────────────────────────────────────────────────
 function login(r) {
@@ -954,6 +994,7 @@ function goTab(t) {
   if (t==='stats') renderStats();
   if (t==='corrige') renderCorrige();
   if (t==='manage') renderManage();
+  if (t==='settings') renderSettings();
 }
 const cap = s => s.charAt(0).toUpperCase()+s.slice(1);
 
@@ -1305,7 +1346,7 @@ function renderStats() {
         + (a.userName || 'Anonyme') + '</span>'
         + '<span style="color:var(--text3);font-size:12px">' + a.date + '</span>'
         + '<span class="attempt-score" style="color:' + si.fg + '">' + a.score + '% (' + a.correct + '/' + a.total + ')</span>'
-        + '<span class="tag ' + si.tagClass + '">' + si.tagLabel + ' — ' + si.label + '</span>'
+        + '<span class="tag" style="background:' + si.bg + ';color:' + si.fg + '">' + si.tagLabel + ' — ' + si.label + '</span>'
         + '<button class="btn btn-sm" onclick="openDetail(' + ri + ')" style="font-size:11px;padding:4px 10px;flex-shrink:0">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Détail</button>'
         + '<button class="btn btn-sm" onclick="deleteAttempt(' + ri + ',\'stats\')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer">'
@@ -1469,6 +1510,131 @@ async function deleteQCM(id) {
   if (editingQcmId === id) resetForm(); // le QCM en cours d'édition vient d'être supprimé
   showToast('QCM supprimé.');
   renderManage();
+}
+
+// ─── Réglages : seuils / couleurs / commentaires des résultats ────────────────
+function escapeHtml(s) {
+  return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderSettings() {
+  const s = getScoreSettings();
+  const bad  = s.find(x => x.key === 'bad');
+  const mid  = s.find(x => x.key === 'mid');
+  const good = s.find(x => x.key === 'good');
+  const el = $('settingsContent');
+
+  const tierRow = (t, hint) => `
+    <div style="border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface2)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+        <span style="width:14px;height:14px;border-radius:50%;background:${t.color};flex-shrink:0;display:inline-block" id="preview_${t.key}"></span>
+        <span style="font-size:12px;color:var(--text3)">${hint}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr 1fr 1.3fr;gap:10px;align-items:end">
+        <div>
+          <label>Seuil minimum</label>
+          <input type="number" min="0" max="100" id="set_${t.key}_min" value="${t.min}"
+            ${t.key === 'bad' ? 'disabled title="Le niveau bas commence toujours à 0 %"' : 'oninput="updateSettingsPreview()"'}>
+        </div>
+        <div>
+          <label>Commentaire</label>
+          <input type="text" id="set_${t.key}_label" value="${escapeHtml(t.label)}" placeholder="Ex: Excellent" oninput="updateSettingsPreview()">
+        </div>
+        <div>
+          <label>Couleur</label>
+          <input type="color" id="set_${t.key}_color" value="${t.color}" style="height:38px;padding:2px;cursor:pointer" oninput="updateSettingsPreview()">
+        </div>
+        <div>
+          <label>Statut</label>
+          <select id="set_${t.key}_passed" onchange="updateSettingsPreview()">
+            <option value="1" ${t.passed ? 'selected' : ''}>Réussi</option>
+            <option value="0" ${!t.passed ? 'selected' : ''}>Échoué</option>
+          </select>
+        </div>
+      </div>
+    </div>`;
+
+  el.innerHTML = `
+    <div class="card">
+      <div class="card-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        Seuils, couleurs et commentaires
+      </div>
+      <div style="font-size:12px;color:var(--text3);margin-bottom:14px">
+        Le niveau appliqué à un résultat est celui du seuil le plus élevé que le score atteint ou dépasse. Le niveau bas s'applique donc automatiquement en dessous du seuil "Pas mal".
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        ${tierRow(bad,  'Niveau bas — s\'applique de 0 % jusqu\'au seuil du niveau intermédiaire')}
+        ${tierRow(mid,  'Niveau intermédiaire')}
+        ${tierRow(good, 'Niveau haut')}
+      </div>
+
+      <div id="settingsPreview" style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap"></div>
+      <div id="settingsError" class="hidden" style="margin-top:12px;font-size:12px;color:var(--danger-light);background:var(--danger-bg);border:1px solid #4d1f1f;border-radius:8px;padding:10px 12px"></div>
+
+      <div class="btn-group" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="saveSettingsForm()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          Enregistrer
+        </button>
+        <button class="btn" onclick="resetSettingsForm()">Réinitialiser aux valeurs par défaut</button>
+      </div>
+    </div>`;
+
+  updateSettingsPreview();
+}
+
+function readSettingsForm() {
+  return ['bad','mid','good'].map(key => ({
+    key,
+    min: key === 'bad' ? 0 : (parseInt($('set_'+key+'_min').value) || 0),
+    color: $('set_'+key+'_color').value || '#888888',
+    label: $('set_'+key+'_label').value.trim() || (key === 'bad' ? 'Insuffisant' : key === 'mid' ? 'Pas mal' : 'Excellent'),
+    passed: $('set_'+key+'_passed').value === '1'
+  }));
+}
+
+function updateSettingsPreview() {
+  const tiers = readSettingsForm();
+  ['bad','mid','good'].forEach(key => {
+    const t = tiers.find(x => x.key === key);
+    const dot = $('preview_'+key);
+    if (dot) dot.style.background = t.color;
+  });
+  const prev = $('settingsPreview');
+  if (prev) {
+    prev.innerHTML = [30, 65, 90].map(score => {
+      // Utilise directement le formulaire (pas encore enregistré) pour la prévisualisation
+      const sorted = [...tiers].sort((a,b) => b.min - a.min);
+      const t = sorted.find(x => score >= x.min) || sorted[sorted.length-1];
+      return `<span class="tag" style="background:${hexToRgba(t.color,0.16)};color:${t.color};font-size:11px;padding:4px 10px">
+        Aperçu ${score}% → ${t.passed ? 'Réussi' : 'Échoué'} — ${escapeHtml(t.label)}
+      </span>`;
+    }).join('');
+  }
+}
+
+async function saveSettingsForm() {
+  const tiers = readSettingsForm();
+  const bad = tiers.find(t => t.key === 'bad'), mid = tiers.find(t => t.key === 'mid'), good = tiers.find(t => t.key === 'good');
+  const errEl = $('settingsError');
+  hide('settingsError');
+
+  if (mid.min <= bad.min || mid.min >= 100) { errEl.textContent = 'Le seuil du niveau intermédiaire doit être compris entre 1 % et 99 %.'; show('settingsError'); return; }
+  if (good.min <= mid.min || good.min > 100) { errEl.textContent = 'Le seuil du niveau haut doit être supérieur au seuil intermédiaire, et au maximum 100 %.'; show('settingsError'); return; }
+  if (!bad.label || !mid.label || !good.label) { errEl.textContent = 'Chaque niveau doit avoir un commentaire.'; show('settingsError'); return; }
+
+  await saveScoreSettings(tiers);
+  showToast('Réglages des résultats enregistrés.');
+  renderSettings();
+}
+
+function resetSettingsForm() {
+  if (!confirm('Réinitialiser les seuils, couleurs et commentaires aux valeurs par défaut ?')) return;
+  saveScoreSettings(JSON.parse(JSON.stringify(DEFAULT_SCORE_SETTINGS))).then(() => {
+    showToast('Réglages réinitialisés.');
+    renderSettings();
+  });
 }
 
 // ─── Quiz list ────────────────────────────────────────────────────────────────
@@ -1857,7 +2023,7 @@ function renderHistory() {
       </span>
       <span style="font-weight:600;flex:1">${a.qcmTitle}</span>
       <span class="attempt-score" style="color:${si.fg}">${a.score}%</span>
-      <span class="tag ${si.tagClass}">${si.tagLabel} — ${si.label}</span>
+      <span class="tag" style="background:${si.bg};color:${si.fg}">${si.tagLabel} — ${si.label}</span>
       <span style="color:var(--text3);font-size:12px">${a.date}</span>
       <button class="btn btn-sm" onclick="openDetail(${i})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
