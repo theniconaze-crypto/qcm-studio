@@ -90,6 +90,16 @@ textarea{resize:vertical;min-height:60px}
 .btn-group{display:flex;gap:8px;flex-wrap:wrap}
 .btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
+/* Groupes créateur (checklist QCM par profil) */
+.qcm-owner-group{border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:6px}
+.qcm-owner-group:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.qcm-owner-group summary{list-style:none;cursor:pointer;outline:none}
+.qcm-owner-group summary::-webkit-details-marker{display:none}
+.qcm-owner-group summary .grp-chevron{display:inline-block;width:10px;color:var(--text3);transition:transform .15s;flex-shrink:0}
+.qcm-owner-group[open] summary .grp-chevron{transform:rotate(90deg)}
+.qcm-owner-group summary .grp-name{flex:1;color:var(--text);font-weight:600;font-size:13px}
+.qcm-owner-group summary .grp-count{font-weight:400;color:var(--text3);font-size:11px}
+
 /* Questions */
 .q-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
 .q-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
@@ -1773,11 +1783,55 @@ function renderProfileQcmChecklist(selectedIds) {
     el.innerHTML = `<div style="font-size:12px;color:var(--text3)">Aucun QCM n'existe encore.</div>`;
     return;
   }
-  el.innerHTML = qcms.map(q => `
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;cursor:pointer;margin-bottom:0">
-      <input type="checkbox" class="profile-qcm-check" value="${q.id}" ${sel.has(q.id) ? 'checked' : ''} style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
-      <span>${escapeHtml(q.title)}</span>
-    </label>`).join('');
+  // Regroupement des QCM par créateur (ownerId)
+  const groups = new Map(); // ownerId -> { label, qcms: [] }
+  qcms.forEach(q => {
+    const ownerId = q.ownerId || 'admin';
+    if (!groups.has(ownerId)) groups.set(ownerId, { label: ownerLabel(q), qcms: [] });
+    groups.get(ownerId).qcms.push(q);
+  });
+
+  el.innerHTML = Array.from(groups.entries()).map(([ownerId, group]) => {
+    const oid = escapeHtml(String(ownerId));
+    const allSelected = group.qcms.every(q => sel.has(q.id));
+    return `
+    <details class="qcm-owner-group" open>
+      <summary style="display:flex;align-items:center;gap:8px;padding:4px 0">
+        <span class="grp-chevron">▸</span>
+        <input type="checkbox" class="owner-group-check" data-owner="${oid}"
+               ${allSelected ? 'checked' : ''}
+               onclick="event.stopPropagation(); toggleOwnerGroup('${oid}', this.checked)"
+               style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+        <span class="grp-name">${escapeHtml(group.label)}</span>
+        <span class="grp-count">${group.qcms.length} QCM</span>
+      </summary>
+      <div style="display:flex;flex-direction:column;gap:6px;padding:6px 0 2px 33px">
+        ${group.qcms.map(q => `
+        <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;cursor:pointer;margin-bottom:0">
+          <input type="checkbox" class="profile-qcm-check" data-owner="${oid}" value="${q.id}" ${sel.has(q.id) ? 'checked' : ''}
+                 onchange="syncOwnerGroupCheckbox('${oid}')"
+                 style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+          <span>${escapeHtml(q.title)}</span>
+        </label>`).join('')}
+      </div>
+    </details>`;
+  }).join('');
+}
+
+// Coche/décoche tous les QCM d'un créateur donné (= "partager" tous ses QCM d'un coup)
+function toggleOwnerGroup(ownerId, checked) {
+  document.querySelectorAll(`.profile-qcm-check[data-owner="${CSS.escape(ownerId)}"]`).forEach(cb => { cb.checked = checked; });
+}
+
+// Met à jour l'état de la case "sélectionner tout" d'un créateur selon ses QCM enfants
+function syncOwnerGroupCheckbox(ownerId) {
+  const children = document.querySelectorAll(`.profile-qcm-check[data-owner="${CSS.escape(ownerId)}"]`);
+  const groupCheckbox = document.querySelector(`.owner-group-check[data-owner="${CSS.escape(ownerId)}"]`);
+  if (!groupCheckbox || !children.length) return;
+  const allChecked = Array.from(children).every(cb => cb.checked);
+  const noneChecked = Array.from(children).every(cb => !cb.checked);
+  groupCheckbox.checked = allChecked;
+  groupCheckbox.indeterminate = !allChecked && !noneChecked;
 }
 
 function onProfileRoleChange() {
