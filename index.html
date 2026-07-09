@@ -677,6 +677,13 @@ const hide = id => $(id).classList.add('hidden');
 const ADMIN_PASSWORD = 'totototo';
 const CREATOR_PASSWORD = 'createur123';
 
+// Barème des résultats : rouge = insuffisant/échoué, jaune = pas mal/réussi, vert = excellent/réussi
+function scoreInfo(score) {
+  if (score >= 75) return { level:'good', passed:true,  label:'Excellent', resultTitle:'Excellent travail !', tagLabel:'Réussi',  tagClass:'tag-ok',   fg:'var(--success-light)', bg:'var(--success-bg)', border:'#1a4d30', main:'var(--success)' };
+  if (score >= 60) return { level:'mid',  passed:true,  label:'Pas mal',   resultTitle:'Pas mal !',           tagLabel:'Réussi',  tagClass:'tag-warn', fg:'var(--warning-light)', bg:'var(--warning-bg)', border:'#4d3a0a', main:'var(--warning)' };
+  return                { level:'bad',  passed:false, label:'Insuffisant', resultTitle:'À revoir…',          tagLabel:'Échoué',  tagClass:'tag-bad',  fg:'var(--danger-light)',  bg:'var(--danger-bg)',  border:'#4d1f1f', main:'var(--danger)' };
+}
+
 // ─── State ───────────────────────────────────────────────────────────────────
 let role = null, questions = [], currentQCM = null;
 let pendingLoginRole = null;
@@ -1291,16 +1298,14 @@ function renderStats() {
 
     const attRows = att.length ? att.map(({a, globalIdx}) => {
       const ri = total_att - 1 - globalIdx;
-      const sc = a.score>=70 ? 'var(--success-light)' : a.score>=40 ? 'var(--warning-light)' : 'var(--danger-light)';
-      const tc = a.score>=70 ? 'tag-ok' : a.score>=40 ? 'tag-warn' : 'tag-bad';
-      const tl = a.score>=70 ? 'Réussi' : a.score>=40 ? 'Passable' : 'Échoué';
+      const si = scoreInfo(a.score);
       return '<div class="attempt-row">'
         + '<span style="display:flex;align-items:center;gap:5px;font-weight:600">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;flex-shrink:0;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'
         + (a.userName || 'Anonyme') + '</span>'
         + '<span style="color:var(--text3);font-size:12px">' + a.date + '</span>'
-        + '<span class="attempt-score" style="color:' + sc + '">' + a.score + '% (' + a.correct + '/' + a.total + ')</span>'
-        + '<span class="tag ' + tc + '">' + tl + '</span>'
+        + '<span class="attempt-score" style="color:' + si.fg + '">' + a.score + '% (' + a.correct + '/' + a.total + ')</span>'
+        + '<span class="tag ' + si.tagClass + '">' + si.tagLabel + ' — ' + si.label + '</span>'
         + '<button class="btn btn-sm" onclick="openDetail(' + ri + ')" style="font-size:11px;padding:4px 10px;flex-shrink:0">'
         + '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg> Détail</button>'
         + '<button class="btn btn-sm" onclick="deleteAttempt(' + ri + ',\'stats\')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer">'
@@ -1716,15 +1721,12 @@ async function finishQuiz() {
     if (resultZone) resultZone.style.display = 'block';
 
     const rc = $('resultCircle');
-    const isGood = score>=70, isMid = score>=40;
-    const colBg = isGood?'var(--success-bg)':isMid?'var(--warning-bg)':'var(--danger-bg)';
-    const colFg = isGood?'var(--success-light)':isMid?'var(--warning-light)':'var(--danger-light)';
-    const colBd = isGood?'var(--success)':isMid?'var(--warning)':'var(--danger)';
+    const si = scoreInfo(score);
     if (rc) {
-      rc.style.cssText = `background:${colBg};color:${colFg};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${colBd}`;
+      rc.style.cssText = `background:${si.bg};color:${si.fg};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${si.main}`;
       rc.innerHTML = `<span>${score}%</span><span style="font-size:12px;font-weight:400">${correct}/${total}</span>`;
     }
-    if ($('resultTitle')) $('resultTitle').textContent = isGood?'Excellent travail !':isMid?'Pas mal !':'À revoir…';
+    if ($('resultTitle')) $('resultTitle').textContent = si.resultTitle;
     if ($('resultSub'))   $('resultSub').textContent   = `${correct} bonne${correct>1?'s':''} réponse${correct>1?'s':''} sur ${total}`;
 
     const statusEl = $('remoteResultStatus');
@@ -1765,10 +1767,10 @@ async function finishQuiz() {
     await saveAttempts(attempts);
     hide('quizTaking'); show('quizResult');
     const rc = $('resultCircle');
-    const isGood = score>=70, isMid = score>=40;
-    rc.style.cssText=`background:${isGood?'var(--success-bg)':isMid?'var(--warning-bg)':'var(--danger-bg)'};color:${isGood?'var(--success-light)':isMid?'var(--warning-light)':'var(--danger-light)'};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${isGood?'var(--success)':isMid?'var(--warning)':'var(--danger)'}`;
+    const si = scoreInfo(score);
+    rc.style.cssText=`background:${si.bg};color:${si.fg};width:96px;height:96px;border-radius:50%;margin:0 auto 20px;display:flex;align-items:center;justify-content:center;flex-direction:column;font-size:26px;font-weight:700;border:2px solid ${si.main}`;
     rc.innerHTML=`<span>${score}%</span><span style="font-size:12px;font-weight:400">${correct}/${total}</span>`;
-    $('resultTitle').textContent = isGood?'Excellent travail !':isMid?'Pas mal !':'À revoir…';
+    $('resultTitle').textContent = si.resultTitle;
     $('resultSub').textContent = `${correct} bonne${correct>1?'s':''} réponse${correct>1?'s':''} sur ${total}`;
   }
 }
@@ -1781,9 +1783,8 @@ function openDetail(attemptIdx) {
   const a = attempts[attemptIdx];
   if (!a) return;
 
-  const isGood = a.score>=70, isMid = a.score>=40;
-  const color = isGood ? 'var(--success-light)' : isMid ? 'var(--warning-light)' : 'var(--danger-light)';
-  const bg    = isGood ? 'var(--success-bg)'   : isMid ? 'var(--warning-bg)'   : 'var(--danger-bg)';
+  const si = scoreInfo(a.score);
+  const color = si.fg, bg = si.bg;
 
   $('detailTitle').innerHTML = `
     <svg viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline;vertical-align:middle;margin-right:6px">
@@ -1796,7 +1797,7 @@ function openDetail(attemptIdx) {
   $('detailScore').innerHTML = `
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
       <span style="font-size:13px;font-weight:600;color:${color}">${a.score}% — ${a.correct} / ${a.total} bonne${a.correct>1?'s':''} réponse${a.correct>1?'s':''}</span>
-      <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${bg};color:${color}">${isGood?'Réussi':isMid?'Passable':'Échoué'}</span>
+      <span style="font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:${bg};color:${color}">${si.tagLabel} — ${si.label}</span>
     </div>
     <div class="detail-score-bar"><div class="detail-score-fill" style="width:${a.score}%;background:${color}"></div></div>`;
 
@@ -1846,14 +1847,17 @@ function openDetail(attemptIdx) {
 function renderHistory() {
   const att = getAttempts().slice().reverse(), el = $('historyList');
   if (!att.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Aucune tentative pour l\'instant.</div>'; return; }
-  el.innerHTML = att.map((a, i) => `
+  el.innerHTML = att.map((a, i) => {
+    const si = scoreInfo(a.score);
+    return `
     <div class="attempt-row" style="cursor:default">
       <span style="display:flex;align-items:center;gap:5px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <strong>${a.userName||'Anonyme'}</strong>
       </span>
       <span style="font-weight:600;flex:1">${a.qcmTitle}</span>
-      <span class="attempt-score" style="color:${a.score>=70?'var(--success-light)':a.score>=40?'var(--warning-light)':'var(--danger-light)'}">${a.score}%</span>
+      <span class="attempt-score" style="color:${si.fg}">${a.score}%</span>
+      <span class="tag ${si.tagClass}">${si.tagLabel} — ${si.label}</span>
       <span style="color:var(--text3);font-size:12px">${a.date}</span>
       <button class="btn btn-sm" onclick="openDetail(${i})" style="font-size:11px;padding:4px 10px;flex-shrink:0">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -1862,7 +1866,8 @@ function renderHistory() {
       <button class="btn btn-sm" onclick="deleteAttempt(${i},'history')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer ce résultat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       </button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 // ─── Offline detection ────────────────────────────────────────────────────────
