@@ -2122,7 +2122,12 @@ function generateShareLink() {
     qcmId: currentQCM.id,
     userName: currentUsername,
     jbKey: masterKey,
-    binId: binId
+    binId: binId,
+    // Identité de la personne qui génère le lien (créateur, utilisateur ou admin),
+    // afin que le résultat du candidat distant lui soit bien rattaché et visible
+    // dans son propre historique / ses stats une fois de retour dans l'appli.
+    generatorProfileId: currentProfile ? currentProfile.id : null,
+    generatorRole: role
   };
   const token = btoa(unescape(encodeURIComponent(JSON.stringify(payload))));
   const link = `${location.href.split('?')[0]}?token=${token}`;
@@ -2151,18 +2156,25 @@ function copyLink() {
 }
 
 // ─── Mode lien partagé (remote) ───────────────────────────────────────────────
+let remoteGeneratorProfileId = null; // profil (créateur/utilisateur) ayant généré le lien
+let remoteGeneratorRole = null;      // rôle de ce profil au moment de la génération
+
 function checkTokenInURL() {
   const params = new URLSearchParams(location.search);
   const token = params.get('token');
   if (!token) return false;
   try {
     const payload = JSON.parse(decodeURIComponent(escape(atob(token))));
-    const { qcmId, userName, jbKey, binId } = payload;
+    const { qcmId, userName, jbKey, binId, generatorProfileId, generatorRole } = payload;
     if (!qcmId || !userName || !jbKey || !binId) return false;
 
     remoteMode = true;
     remoteConfig = { jbKey, binId };
     currentUsername = userName;
+    // Peut être absent sur d'anciens liens déjà générés avant cette correction :
+    // dans ce cas le résultat ne remontera que pour l'admin, comme avant.
+    remoteGeneratorProfileId = generatorProfileId || null;
+    remoteGeneratorRole = generatorRole || null;
 
     // Interface épurée : on cache tout et on affiche juste le quiz
     document.querySelector('.header').style.display = 'none';
@@ -2298,7 +2310,11 @@ async function finishQuiz() {
     id: genAttemptId(),
     qcmId:currentQCM.id, qcmTitle:currentQCM.title, score, correct, total,
     date:new Date().toLocaleDateString('fr-FR'), userName:currentUsername,
-    profileId: currentProfile ? currentProfile.id : null,
+    // En direct : on rattache la tentative au profil actuellement connecté.
+    // Via lien partagé : le "candidat" distant n'est connecté à aucun profil,
+    // on rattache donc la tentative au profil qui a généré le lien, pour que
+    // celui-ci retrouve bien le résultat dans son historique / ses stats.
+    profileId: remoteMode ? remoteGeneratorProfileId : (currentProfile ? currentProfile.id : null),
     details
   };
 
