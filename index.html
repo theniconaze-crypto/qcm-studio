@@ -452,6 +452,10 @@ textarea{resize:vertical;min-height:60px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
       Mes résultats
     </button>
+    <button class="tab" id="tabShared" onclick="goTab('shared')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Résultats partagés
+    </button>
     <button class="tab active" id="tabCreate" onclick="goTab('create')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
       Créer
@@ -483,12 +487,30 @@ textarea{resize:vertical;min-height:60px}
   <div id="userHistory" class="hidden">
     <div class="section-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
       <div><h2>Mes résultats</h2><p>Historique de vos tentatives</p></div>
-      <button class="btn btn-sm" id="refreshHistoryBtn" onclick="refreshResults('history')">
+      <div class="btn-group">
+        <button class="btn btn-sm" id="shareSelectionBtn" onclick="openShareModal()" disabled>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          Partager (<span id="shareSelCount">0</span>)
+        </button>
+        <button class="btn btn-sm" id="refreshHistoryBtn" onclick="refreshResults('history')">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
+          Rafraîchir
+        </button>
+      </div>
+    </div>
+    <div id="historyList"></div>
+  </div>
+
+  <!-- RÉSULTATS PARTAGÉS (créateur / utilisateur) -->
+  <div id="userShared" class="hidden">
+    <div class="section-head" style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">
+      <div><h2>Résultats partagés</h2><p>Résultats que d'autres profils ont partagés avec vous</p></div>
+      <button class="btn btn-sm" id="refreshSharedBtn" onclick="refreshResults('shared')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>
         Rafraîchir
       </button>
     </div>
-    <div id="historyList"></div>
+    <div id="sharedList"></div>
   </div>
 
   <!-- CREATE (admin / créateur) -->
@@ -762,6 +784,23 @@ textarea{resize:vertical;min-height:60px}
     </div>
   </div>
 
+  <!-- Modale de partage de résultats -->
+  <div id="shareModal" class="modal-overlay hidden" onclick="if(event.target===this)closeShareModal()">
+    <div class="modal" onclick="event.stopPropagation()" style="width:420px;max-height:80vh;display:flex;flex-direction:column">
+      <div class="modal-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        Partager <span id="shareModalCount">1 résultat</span>
+      </div>
+      <div class="modal-sub">Choisissez le ou les profils qui recevront ce(s) résultat(s) dans leur onglet « Résultats partagés ».</div>
+      <div id="shareModalError" class="modal-error hidden">Sélectionnez au moins un profil.</div>
+      <div id="shareProfileList" style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:10px;background:var(--surface2)"></div>
+      <div class="modal-btns" style="margin-top:16px">
+        <button class="btn btn-primary" onclick="confirmShare()" style="flex:1">Partager</button>
+        <button class="btn" onclick="closeShareModal()">Annuler</button>
+      </div>
+    </div>
+  </div>
+
   <div id="quizTaking" class="hidden">
     <div class="progress-wrap">
       <div class="progress-label">
@@ -847,6 +886,7 @@ function scoreInfo(score) {
 // ─── State ───────────────────────────────────────────────────────────────────
 let role = null, questions = [], currentQCM = null;
 let currentProfile = null; // profil { id, username, password, role, allowedQcmIds } du créateur/utilisateur connecté (null pour admin)
+let selectedAttemptIds = new Set(); // tentatives cochées dans "Mes résultats" en vue d'un partage
 let pendingLoginRole = null;
 let editingQcmId = null;
 let currentQIdx = 0, userAnswers = [], timerInterval = null, timeLeft = 0;
@@ -857,6 +897,7 @@ const KEY_QCMS     = 'qcm_studio_v2_qcms';
 const KEY_ATTEMPTS = 'qcm_studio_v2_attempts';
 const KEY_SCORE_SETTINGS = 'qcm_studio_v2_score_settings';
 const KEY_PROFILES = 'qcm_studio_v2_profiles';
+const KEY_SHARES   = 'qcm_studio_v2_shares';
 const KEY_JB_KEY   = 'qcm_jsonbin_masterkey';
 const KEY_JB_BIN   = 'qcm_jsonbin_binid';
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
@@ -890,6 +931,8 @@ const localGetScoreSettings = () => {
 const localSaveScoreSettings = a => localStorage.setItem(KEY_SCORE_SETTINGS, JSON.stringify(a));
 const localGetProfiles = () => { try { return JSON.parse(localStorage.getItem(KEY_PROFILES)||'[]'); } catch(e){ return []; }};
 const localSaveProfiles = a => localStorage.setItem(KEY_PROFILES, JSON.stringify(a));
+const localGetShares = () => { try { return JSON.parse(localStorage.getItem(KEY_SHARES)||'[]'); } catch(e){ return []; }};
+const localSaveShares = a => localStorage.setItem(KEY_SHARES, JSON.stringify(a));
 
 // Cloud R/W
 async function cloudRead() {
@@ -922,6 +965,7 @@ async function syncFromCloud() {
     if (record?.attempts)      localSaveAttempts(record.attempts);
     if (record?.scoreSettings) localSaveScoreSettings(record.scoreSettings);
     if (record?.profiles)      localSaveProfiles(record.profiles);
+    if (record?.shares)        localSaveShares(record.shares);
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Sync cloud échouée, mode local', e);
@@ -934,7 +978,7 @@ async function pushToCloud() {
   if (!isCloudEnabled()) return;
   setCloudStatus('syncing', 'Sauvegarde…');
   try {
-    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles() });
+    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles(), shares: localGetShares() });
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Push cloud échoué', e);
@@ -953,10 +997,12 @@ const getQCMs     = () => localGetQCMs();
 const getAttempts = () => localGetAttempts();
 const getScoreSettings = () => localGetScoreSettings();
 const getProfiles = () => localGetProfiles();
+const getShares = () => localGetShares();
 async function saveQCMs(a)     { localSaveQCMs(a);     await pushToCloud(); }
 async function saveAttempts(a) { localSaveAttempts(a); await pushToCloud(); }
 async function saveScoreSettings(a) { localSaveScoreSettings(a); await pushToCloud(); }
 async function saveProfiles(a) { localSaveProfiles(a); await pushToCloud(); }
+async function saveShares(a)   { localSaveShares(a);    await pushToCloud(); }
 
 function showToast(msg) {
   const t = $('toast');
@@ -1086,8 +1132,8 @@ $('pwModal').addEventListener('click', e => { if (e.target === $('pwModal')) clo
 // ni aux corrigés globaux (réservés à l'administrateur).
 const ROLE_LABELS  = { admin: 'Administrateur', creator: 'Créateur', user: 'Utilisateur' };
 const ROLE_BADGES  = { admin: 'badge-admin', creator: 'badge-creator', user: 'badge-user' };
-const ROLE_TABS    = { admin: ['create','stats','corrige','manage','settings','profiles'], creator: ['quiz','history','create','manage','stats'], user: ['quiz','history'] };
-const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage', settings:'adminSettings', profiles:'adminProfiles' };
+const ROLE_TABS    = { admin: ['create','stats','corrige','manage','settings','profiles'], creator: ['quiz','history','shared','create','manage','stats'], user: ['quiz','history','shared'] };
+const TAB_CONTENT  = { quiz:'userQuiz', history:'userHistory', shared:'userShared', create:'adminCreate', stats:'adminStats', corrige:'adminCorrige', manage:'adminManage', settings:'adminSettings', profiles:'adminProfiles' };
 
 // ─── Login / logout ───────────────────────────────────────────────────────────
 function login(r, profile) {
@@ -1166,6 +1212,7 @@ function goTab(t) {
   $('tab'+cap(t)).classList.add('active');
   if (t==='quiz') renderQuizList();
   if (t==='history') renderHistory();
+  if (t==='shared') renderSharedResults();
   if (t==='stats') renderStats();
   if (t==='corrige') renderCorrige();
   if (t==='manage') renderManage();
@@ -1499,7 +1546,7 @@ async function deleteAllAttempts(qcmId) {
 // ─── Stats ────────────────────────────────────────────────────────────────────
 // ─── Rafraîchir les résultats (re-sync cloud → tous les profils) ──────────────
 async function refreshResults(tab) {
-  const btnId = tab === 'history' ? 'refreshHistoryBtn' : 'refreshStatsBtn';
+  const btnId = tab === 'history' ? 'refreshHistoryBtn' : (tab === 'shared' ? 'refreshSharedBtn' : 'refreshStatsBtn');
   const btn = $(btnId);
   if (!isCloudEnabled()) {
     showToast("Cloud non configuré : impossible de récupérer les résultats des autres profils.");
@@ -1510,7 +1557,7 @@ async function refreshResults(tab) {
   btn.innerHTML = '<div class="spinner" style="width:12px;height:12px;border-width:2px"></div> Rafraîchissement…';
   try {
     await syncFromCloud();
-    if (tab === 'history') renderHistory(); else renderStats();
+    if (tab === 'history') renderHistory(); else if (tab === 'shared') renderSharedResults(); else renderStats();
     showToast('Résultats à jour.');
   } catch(e) {
     showToast("Échec du rafraîchissement.");
@@ -2434,8 +2481,24 @@ function backToList() { hide('quizResult'); show('userQuiz'); renderQuizList(); 
 function openDetail(attemptId) {
   const a = getAttempts().find(x => x.id === attemptId);
   if (!a) return;
-  if (!canViewAttempt(a)) { alert("Vous n'avez pas le droit de consulter ce résultat."); return; }
+  if (!canViewAttempt(a) && !isSharedWithMe(a.id)) { alert("Vous n'avez pas le droit de consulter ce résultat."); return; }
+  renderDetailModal(a);
+}
 
+// Un résultat partagé avec le profil connecté (indépendamment des droits habituels)
+function isSharedWithMe(attemptId) {
+  return !!currentProfile && getShares().some(s => s.attemptId === attemptId && s.toProfileId === currentProfile.id);
+}
+
+function openSharedDetail(shareId) {
+  const share = getShares().find(s => s.id === shareId);
+  if (!share || !currentProfile || share.toProfileId !== currentProfile.id) return;
+  const a = getAttempts().find(x => x.id === share.attemptId);
+  if (!a) { showToast("Ce résultat n'est plus disponible."); return; }
+  renderDetailModal(a);
+}
+
+function renderDetailModal(a) {
   const si = scoreInfo(a.score);
   const color = si.fg, bg = si.bg;
 
@@ -2501,11 +2564,17 @@ function renderHistory() {
   const all = getAttempts().slice().reverse();
   const att = currentProfile ? all.filter(a => a.profileId === currentProfile.id) : all;
   const el = $('historyList');
+  // On ne garde dans la sélection que des tentatives encore présentes/affichées
+  const visibleIds = new Set(att.map(a => a.id));
+  selectedAttemptIds.forEach(id => { if (!visibleIds.has(id)) selectedAttemptIds.delete(id); });
+  updateShareBar();
   if (!att.length) { el.innerHTML='<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Aucune tentative pour l\'instant.</div>'; return; }
   el.innerHTML = att.map((a) => {
     const si = scoreInfo(a.score);
+    const checked = selectedAttemptIds.has(a.id);
     return `
     <div class="attempt-row" style="cursor:default">
+      ${currentProfile ? `<input type="checkbox" class="attempt-select-check" data-id="${a.id}" ${checked?'checked':''} onchange="toggleAttemptSelection('${a.id}', this.checked)" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0" title="Sélectionner pour partager">` : ''}
       <span style="display:flex;align-items:center;gap:5px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;color:var(--text3)"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         <strong>${a.userName||'Anonyme'}</strong>
@@ -2518,11 +2587,133 @@ function renderHistory() {
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         Détail
       </button>
+      ${currentProfile ? `<button class="btn btn-sm" onclick="openShareModal('${a.id}')" style="font-size:11px;padding:4px 8px;flex-shrink:0" title="Partager ce résultat">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      </button>` : ''}
       <button class="btn btn-sm" onclick="deleteAttempt('${a.id}','history')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Supprimer ce résultat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
       </button>
     </div>`;
   }).join('');
+}
+
+function toggleAttemptSelection(attemptId, checked) {
+  if (checked) selectedAttemptIds.add(attemptId); else selectedAttemptIds.delete(attemptId);
+  updateShareBar();
+}
+
+function updateShareBar() {
+  const btn = $('shareSelectionBtn');
+  if (!btn) return;
+  $('shareSelCount').textContent = selectedAttemptIds.size;
+  btn.disabled = selectedAttemptIds.size === 0;
+}
+
+// ─── Partage de résultats entre profils ───────────────────────────────────────
+let shareModalAttemptIds = [];
+function genShareId() { return 'sh_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+// singleAttemptId : si fourni, partage uniquement ce résultat ; sinon, partage la sélection courante
+function openShareModal(singleAttemptId) {
+  if (!currentProfile) return;
+  shareModalAttemptIds = singleAttemptId ? [singleAttemptId] : Array.from(selectedAttemptIds);
+  if (!shareModalAttemptIds.length) return;
+  hide('shareModalError');
+  const n = shareModalAttemptIds.length;
+  $('shareModalCount').textContent = `${n} résultat${n>1?'s':''}`;
+  renderShareProfileList();
+  show('shareModal');
+}
+function closeShareModal() { hide('shareModal'); shareModalAttemptIds = []; }
+
+function renderShareProfileList() {
+  const profiles = getProfiles().filter(p => !currentProfile || p.id !== currentProfile.id);
+  const el = $('shareProfileList');
+  if (!profiles.length) { el.innerHTML = `<div style="font-size:12px;color:var(--text3)">Aucun autre profil disponible pour le partage.</div>`; return; }
+  el.innerHTML = profiles.map(p => {
+    const badgeClass = p.role === 'creator' ? 'badge-creator' : 'badge-user';
+    return `
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;cursor:pointer">
+      <input type="checkbox" class="share-profile-check" value="${p.id}" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+      <span style="flex:1">${escapeHtml(p.username)}</span>
+      <span class="badge ${badgeClass}" style="font-size:9px">${p.role==='creator'?'Créateur':'Utilisateur'}</span>
+    </label>`;
+  }).join('');
+}
+
+async function confirmShare() {
+  const checked = Array.from(document.querySelectorAll('.share-profile-check:checked')).map(el => el.value);
+  if (!checked.length) { show('shareModalError'); return; }
+  hide('shareModalError');
+  const shares = getShares();
+  const now = new Date().toLocaleString('fr-FR');
+  shareModalAttemptIds.forEach(attemptId => {
+    checked.forEach(toProfileId => {
+      const exists = shares.some(s => s.attemptId === attemptId && s.toProfileId === toProfileId);
+      if (!exists) {
+        shares.push({
+          id: genShareId(),
+          attemptId,
+          toProfileId,
+          fromProfileId: currentProfile ? currentProfile.id : null,
+          fromUsername: currentProfile ? currentProfile.username : 'Admin',
+          date: now
+        });
+      }
+    });
+  });
+  await saveShares(shares);
+  const n = shareModalAttemptIds.length;
+  closeShareModal();
+  selectedAttemptIds.clear();
+  renderHistory();
+  showToast(`Résultat${n>1?'s':''} partagé${n>1?'s':''}.`);
+}
+
+function renderSharedResults() {
+  const el = $('sharedList');
+  if (!el) return;
+  if (!currentProfile) { el.innerHTML = '<div class="empty">Connectez-vous avec un profil pour voir vos résultats partagés.</div>'; return; }
+  const shares = getShares().filter(s => s.toProfileId === currentProfile.id);
+  const attempts = getAttempts();
+  const rows = shares
+    .map(s => ({ share: s, attempt: attempts.find(a => a.id === s.attemptId) }))
+    .filter(r => !!r.attempt)
+    .reverse();
+  if (!rows.length) {
+    el.innerHTML = `<div class="empty">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      Aucun résultat partagé avec vous pour l'instant.</div>`;
+    return;
+  }
+  el.innerHTML = rows.map(({ share, attempt }) => {
+    const si = scoreInfo(attempt.score);
+    return `
+    <div class="attempt-row" style="cursor:default">
+      <span style="display:flex;align-items:center;gap:5px" title="Partagé par ${escapeHtml(share.fromUsername||'?')}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;color:var(--text3)"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+        <strong>${escapeHtml(share.fromUsername||'?')}</strong>
+      </span>
+      <span style="font-weight:600;flex:1">${attempt.qcmTitle}</span>
+      <span class="attempt-score" style="color:${si.fg}">${attempt.score}%</span>
+      <span class="tag" style="background:${si.bg};color:${si.fg}">${si.tagLabel} — ${si.label}</span>
+      <span style="color:var(--text3);font-size:12px">${share.date}</span>
+      <button class="btn btn-sm" onclick="openSharedDetail('${share.id}')" style="font-size:11px;padding:4px 10px;flex-shrink:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        Détail
+      </button>
+      <button class="btn btn-sm" onclick="removeShare('${share.id}')" style="font-size:11px;padding:4px 8px;flex-shrink:0;background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f" title="Retirer de mes résultats partagés">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function removeShare(shareId) {
+  if (!confirm('Retirer ce résultat de vos résultats partagés ?')) return;
+  await saveShares(getShares().filter(s => s.id !== shareId));
+  renderSharedResults();
+  showToast('Résultat retiré.');
 }
 
 // ─── Offline detection ────────────────────────────────────────────────────────
