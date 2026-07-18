@@ -225,11 +225,15 @@ textarea{resize:vertical;min-height:60px}
 <!-- HEADER -->
 <div class="header">
   <div class="logo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <span id="headerLogoLeftMount" style="display:none;align-items:center">
+      <img id="headerLogoImg" src="" alt="Logo" style="display:none;object-fit:contain">
+    </span>
+    <svg id="headerLogoDefault" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/>
     </svg>
     QCM Studio
   </div>
+  <div id="headerLogoCenterMount" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);display:none;align-items:center"></div>
   <div class="header-right">
     <div class="offline-label" id="offlineLabel" style="display:none">
       <span class="offline-dot"></span> Hors ligne
@@ -250,6 +254,7 @@ textarea{resize:vertical;min-height:60px}
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
       Déconnexion
     </button>
+    <span id="headerLogoRightMount" style="display:none;align-items:center"></span>
   </div>
 </div>
 
@@ -258,6 +263,9 @@ textarea{resize:vertical;min-height:60px}
 <!-- LOGIN -->
 <div id="viewLogin">
   <div class="login-hero">
+    <div id="loginLogoAlignWrap" style="display:flex;justify-content:center;margin-bottom:18px">
+      <img id="loginLogoImg" src="" alt="Logo" style="max-height:110px;max-width:260px;object-fit:contain;display:none">
+    </div>
     <div class="login-title">QCM Studio</div>
     <div class="login-sub">Créez, partagez et répondez à des questionnaires interactifs</div>
   </div>
@@ -596,7 +604,62 @@ textarea{resize:vertical;min-height:60px}
 
   <!-- SETTINGS -->
   <div id="adminSettings" class="hidden">
-    <div class="section-head"><h2>Réglages des résultats</h2><p>Personnalisez les 3 seuils, couleurs et commentaires appliqués aux résultats des QCM</p></div>
+    <div class="section-head"><h2>Logo de l'application</h2><p>Importez un logo à afficher en grand sur la page d'accueil et en petit dans l'en-tête de toutes les pages</p></div>
+    <div class="card">
+      <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap">
+        <div id="logoPreviewWrap" style="width:84px;height:84px;border:1px dashed var(--border2);border-radius:10px;display:flex;align-items:center;justify-content:center;background:var(--surface2);flex-shrink:0;overflow:hidden">
+          <img id="logoPreviewImg" style="max-width:100%;max-height:100%;object-fit:contain;display:none">
+          <span id="logoPreviewEmpty" style="font-size:11px;color:var(--text3);text-align:center;padding:6px">Aucun logo</span>
+        </div>
+        <div style="flex:1;min-width:220px">
+          <input type="file" id="logoFileInput" accept="image/*" style="display:none" onchange="handleLogoFileSelect(event)">
+          <div class="btn-group" style="margin-bottom:12px">
+            <button class="btn btn-sm" id="logoImportBtn" onclick="$('logoFileInput').click()">Importer un logo</button>
+            <button class="btn btn-danger btn-sm hidden" id="logoRemoveBtn" onclick="removeLogo()">Supprimer le logo</button>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-weight:400;cursor:pointer;margin-bottom:0">
+            <input type="checkbox" id="logoEnabledCheck" onchange="toggleLogoEnabled(this.checked)" style="width:15px;height:15px;accent-color:var(--accent);flex-shrink:0">
+            <span>Afficher ce logo (page d'accueil et en-tête)</span>
+          </label>
+          <div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.6">Format image (PNG, JPG, SVG…), 2 Mo maximum. Vous pourrez importer un autre logo à tout moment pour remplacer celui-ci.</div>
+        </div>
+      </div>
+
+      <div id="logoLayoutBlock" style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border);display:grid;grid-template-columns:1fr 1fr;gap:20px">
+        <div>
+          <label style="margin-bottom:8px">Page d'accueil <span style="color:var(--text3);font-weight:400">(gros logo)</span></label>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:var(--text3);margin-bottom:4px">Emplacement</label>
+            <select id="logoHeroPosition" onchange="saveLogoLayout()">
+              <option value="left">Gauche</option>
+              <option value="center">Centre</option>
+              <option value="right">Droite</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text3);margin-bottom:4px">Taille — <span id="logoHeroSizeLabel">100%</span></label>
+            <input type="range" id="logoHeroSize" min="25" max="300" step="5" value="100" oninput="$('logoHeroSizeLabel').textContent=this.value+'%'" onchange="saveLogoLayout()" style="width:100%">
+          </div>
+        </div>
+        <div>
+          <label style="margin-bottom:8px">En-tête <span style="color:var(--text3);font-weight:400">(toutes les pages, petit logo)</span></label>
+          <div style="margin-bottom:10px">
+            <label style="font-size:11px;color:var(--text3);margin-bottom:4px">Emplacement</label>
+            <select id="logoHeaderPosition" onchange="saveLogoLayout()">
+              <option value="left">Gauche</option>
+              <option value="center">Centre</option>
+              <option value="right">Droite</option>
+            </select>
+          </div>
+          <div>
+            <label style="font-size:11px;color:var(--text3);margin-bottom:4px">Taille — <span id="logoHeaderSizeLabel">100%</span></label>
+            <input type="range" id="logoHeaderSize" min="25" max="300" step="5" value="100" oninput="$('logoHeaderSizeLabel').textContent=this.value+'%'" onchange="saveLogoLayout()" style="width:100%">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-head" style="margin-top:22px"><h2>Réglages des résultats</h2><p>Personnalisez les 3 seuils, couleurs et commentaires appliqués aux résultats des QCM</p></div>
     <div id="settingsContent"></div>
   </div>
 
@@ -898,6 +961,7 @@ const KEY_ATTEMPTS = 'qcm_studio_v2_attempts';
 const KEY_SCORE_SETTINGS = 'qcm_studio_v2_score_settings';
 const KEY_PROFILES = 'qcm_studio_v2_profiles';
 const KEY_SHARES   = 'qcm_studio_v2_shares';
+const KEY_LOGO_SETTINGS = 'qcm_studio_v2_logo_settings';
 const KEY_JB_KEY   = 'qcm_jsonbin_masterkey';
 const KEY_JB_BIN   = 'qcm_jsonbin_binid';
 const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
@@ -907,6 +971,12 @@ const DEFAULT_SCORE_SETTINGS = [
   { key:'mid',  min:60, color:'#f59e0b', label:'Pas mal',      passed:true  },
   { key:'good', min:75, color:'#22c55e', label:'Excellent',    passed:true  }
 ];
+const DEFAULT_LOGO_SETTINGS = {
+  image: null,
+  enabled: false,
+  hero:   { position: 'center', sizePct: 100 },
+  header: { position: 'left',   sizePct: 100 }
+};
 
 function getJBConfig() {
   return {
@@ -933,6 +1003,19 @@ const localGetProfiles = () => { try { return JSON.parse(localStorage.getItem(KE
 const localSaveProfiles = a => localStorage.setItem(KEY_PROFILES, JSON.stringify(a));
 const localGetShares = () => { try { return JSON.parse(localStorage.getItem(KEY_SHARES)||'[]'); } catch(e){ return []; }};
 const localSaveShares = a => localStorage.setItem(KEY_SHARES, JSON.stringify(a));
+const localGetLogoSettings = () => {
+  try {
+    const raw = JSON.parse(localStorage.getItem(KEY_LOGO_SETTINGS));
+    if (!raw || typeof raw !== 'object') return JSON.parse(JSON.stringify(DEFAULT_LOGO_SETTINGS));
+    return {
+      image: raw.image || null,
+      enabled: !!raw.enabled,
+      hero:   { position: (raw.hero && raw.hero.position) || 'center', sizePct: (raw.hero && raw.hero.sizePct) || 100 },
+      header: { position: (raw.header && raw.header.position) || 'left', sizePct: (raw.header && raw.header.sizePct) || 100 }
+    };
+  } catch(e) { return JSON.parse(JSON.stringify(DEFAULT_LOGO_SETTINGS)); }
+};
+const localSaveLogoSettings = a => localStorage.setItem(KEY_LOGO_SETTINGS, JSON.stringify(a));
 
 // Cloud R/W
 async function cloudRead() {
@@ -966,7 +1049,9 @@ async function syncFromCloud() {
     if (record?.scoreSettings) localSaveScoreSettings(record.scoreSettings);
     if (record?.profiles)      localSaveProfiles(record.profiles);
     if (record?.shares)        localSaveShares(record.shares);
+    if (record?.logoSettings)  localSaveLogoSettings(record.logoSettings);
     setCloudStatus('synced', 'Cloud ✓');
+    applyLogoDisplay();
   } catch(e) {
     console.warn('Sync cloud échouée, mode local', e);
     setCloudStatus('error', 'Hors ligne');
@@ -978,7 +1063,7 @@ async function pushToCloud() {
   if (!isCloudEnabled()) return;
   setCloudStatus('syncing', 'Sauvegarde…');
   try {
-    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles(), shares: localGetShares() });
+    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles(), shares: localGetShares(), logoSettings: localGetLogoSettings() });
     setCloudStatus('synced', 'Cloud ✓');
   } catch(e) {
     console.warn('Push cloud échoué', e);
@@ -1003,6 +1088,8 @@ async function saveAttempts(a) { localSaveAttempts(a); await pushToCloud(); }
 async function saveScoreSettings(a) { localSaveScoreSettings(a); await pushToCloud(); }
 async function saveProfiles(a) { localSaveProfiles(a); await pushToCloud(); }
 async function saveShares(a)   { localSaveShares(a);    await pushToCloud(); }
+const getLogoSettings = () => localGetLogoSettings();
+async function saveLogoSettings(a) { localSaveLogoSettings(a); await pushToCloud(); }
 
 function showToast(msg) {
   const t = $('toast');
@@ -2007,7 +2094,133 @@ function escapeHtml(s) {
   return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+// ─── Logo de l'application (import admin, affichage global) ──────────────────
+const HEADER_LOGO_BASE_PX = 24;   // taille de référence (100%) du logo dans l'en-tête
+const HERO_LOGO_BASE_PX   = 110;  // hauteur de référence (100%) du logo sur la page d'accueil
+
+function applyLogoDisplay() {
+  const s = getLogoSettings();
+  const showLogo = !!(s.enabled && s.image);
+
+  // ── En-tête (toutes les pages) ──
+  const headerDefault = $('headerLogoDefault');
+  const headerImg = $('headerLogoImg');
+  const mounts = { left: $('headerLogoLeftMount'), center: $('headerLogoCenterMount'), right: $('headerLogoRightMount') };
+  if (headerImg && headerDefault && mounts.left) {
+    Object.values(mounts).forEach(m => { if (m) m.style.display = 'none'; });
+    if (showLogo) {
+      const pos = s.header.position === 'center' || s.header.position === 'right' ? s.header.position : 'left';
+      const targetMount = mounts[pos] || mounts.left;
+      targetMount.appendChild(headerImg);
+      targetMount.style.display = 'inline-flex';
+      const px = Math.round(HEADER_LOGO_BASE_PX * (s.header.sizePct || 100) / 100);
+      headerImg.src = s.image;
+      headerImg.style.display = 'inline-block';
+      headerImg.style.height = px + 'px';
+      headerImg.style.width = 'auto';
+      headerDefault.style.display = pos === 'left' ? 'none' : '';
+    } else {
+      mounts.left.appendChild(headerImg);
+      headerImg.style.display = 'none'; headerImg.src = '';
+      headerDefault.style.display = '';
+    }
+  }
+
+  // ── Page d'accueil (gros logo) ──
+  const loginImg = $('loginLogoImg'), loginWrap = $('loginLogoAlignWrap');
+  if (loginImg && loginWrap) {
+    if (showLogo) {
+      const heroPos = s.hero.position === 'left' ? 'flex-start' : (s.hero.position === 'right' ? 'flex-end' : 'center');
+      loginWrap.style.justifyContent = heroPos;
+      const px = Math.round(HERO_LOGO_BASE_PX * (s.hero.sizePct || 100) / 100);
+      loginImg.src = s.image;
+      loginImg.style.display = 'block';
+      loginImg.style.maxHeight = px + 'px';
+      loginImg.style.maxWidth = Math.round(px * 2.4) + 'px';
+    } else {
+      loginImg.style.display = 'none'; loginImg.src = '';
+    }
+  }
+}
+
+function renderLogoSettings() {
+  const s = getLogoSettings();
+  const img = $('logoPreviewImg'), empty = $('logoPreviewEmpty'), removeBtn = $('logoRemoveBtn'),
+        checkbox = $('logoEnabledCheck'), importBtn = $('logoImportBtn');
+  if (!img) return;
+  if (s.image) {
+    img.src = s.image; img.style.display = 'block'; empty.style.display = 'none';
+    removeBtn.classList.remove('hidden');
+    importBtn.textContent = 'Remplacer le logo';
+  } else {
+    img.style.display = 'none'; empty.style.display = 'block';
+    removeBtn.classList.add('hidden');
+    importBtn.textContent = 'Importer un logo';
+  }
+  checkbox.checked = !!s.enabled;
+  checkbox.disabled = !s.image;
+
+  const heroPosSel = $('logoHeroPosition'), heroSizeInput = $('logoHeroSize'), heroSizeLabel = $('logoHeroSizeLabel');
+  const headerPosSel = $('logoHeaderPosition'), headerSizeInput = $('logoHeaderSize'), headerSizeLabel = $('logoHeaderSizeLabel');
+  if (heroPosSel) {
+    heroPosSel.value = s.hero.position;
+    heroSizeInput.value = s.hero.sizePct;
+    heroSizeLabel.textContent = s.hero.sizePct + '%';
+    headerPosSel.value = s.header.position;
+    headerSizeInput.value = s.header.sizePct;
+    headerSizeLabel.textContent = s.header.sizePct + '%';
+  }
+}
+
+function handleLogoFileSelect(event) {
+  const file = event.target.files && event.target.files[0];
+  event.target.value = '';
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Veuillez sélectionner un fichier image.'); return; }
+  if (file.size > 2 * 1024 * 1024) { showToast('Image trop lourde (2 Mo maximum).'); return; }
+  const reader = new FileReader();
+  reader.onload = () => saveLogoImage(reader.result);
+  reader.onerror = () => showToast('Échec de la lecture du fichier.');
+  reader.readAsDataURL(file);
+}
+
+async function saveLogoImage(dataURL) {
+  const s = getLogoSettings();
+  await saveLogoSettings({ ...s, image: dataURL, enabled: true });
+  renderLogoSettings();
+  applyLogoDisplay();
+  showToast('Logo importé.');
+}
+
+async function toggleLogoEnabled(checked) {
+  const s = getLogoSettings();
+  await saveLogoSettings({ ...s, enabled: checked });
+  applyLogoDisplay();
+}
+
+// Enregistre l'emplacement et la taille choisis pour la page d'accueil et l'en-tête
+async function saveLogoLayout() {
+  const s = getLogoSettings();
+  const updated = {
+    ...s,
+    hero:   { position: $('logoHeroPosition').value,   sizePct: Number($('logoHeroSize').value) },
+    header: { position: $('logoHeaderPosition').value, sizePct: Number($('logoHeaderSize').value) }
+  };
+  await saveLogoSettings(updated);
+  applyLogoDisplay();
+}
+
+async function removeLogo() {
+  if (!confirm('Supprimer le logo actuel ?')) return;
+  const s = getLogoSettings();
+  await saveLogoSettings({ ...s, image: null, enabled: false });
+  renderLogoSettings();
+  applyLogoDisplay();
+  showToast('Logo supprimé.');
+}
+
 function renderSettings() {
+  renderLogoSettings();
   const s = getScoreSettings();
   const bad  = s.find(x => x.key === 'bad');
   const mid  = s.find(x => x.key === 'mid');
@@ -2754,6 +2967,7 @@ self.addEventListener('fetch',e=>{
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 renderQuestions();
+applyLogoDisplay();
 if (!checkTokenInURL()) {
   // Mode normal — rien à faire, l'écran de login est visible par défaut
 }
