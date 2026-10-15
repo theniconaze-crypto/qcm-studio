@@ -1454,6 +1454,9 @@ let currentProvider = localStorage.getItem('qcm_provider') || 'gemini';
 
 // Clé Gemini par défaut (optionnelle) : à renseigner ici UNIQUEMENT avec une clé valide et restreinte.
 const DEFAULT_GEMINI_KEY = '';
+// Proxy optionnel (ex. Cloudflare Worker) utilisé si le poste ne peut pas joindre Google directement.
+// Il doit relayer POST <proxy>/v1beta/models/<modèle>:generateContent vers generativelanguage.googleapis.com.
+const GEMINI_PROXY_URL = '';
 function getStoredKey(p) { const s = (localStorage.getItem(PROVIDERS[p].key) || '').trim(); if (s && s !== 'SERVEUR') return s; return (p === 'gemini' ? DEFAULT_GEMINI_KEY : ''); }
 function getActiveKey()  { return getStoredKey(currentProvider); }
 
@@ -1580,19 +1583,27 @@ async function generateWithAI() {
           : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
         const gc = { temperature: 0.7, maxOutputTokens: 8192, responseMimeType: 'application/json' };
         if (model.startsWith('gemini-2.5')) gc.thinkingConfig = { thinkingBudget: 0 };
+        const init = {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+          body: JSON.stringify({
+            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+            contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+            generationConfig: gc
+          })
+        };
         let res;
         try {
-          res = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-            body: JSON.stringify({
-              system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-              contents: [{ role: 'user', parts: [{ text: userMsg }] }],
-              generationConfig: gc
-            })
-          });
+          res = await fetch(url, init);
         } catch (netErr) {
-          throw new Error('Impossible de joindre Google (réseau, pare-feu ou bloqueur de pub/extension).');
+          console.error('Gemini direct :', netErr);
+          if (GEMINI_PROXY_URL) {
+            try {
+              res = await fetch(`${GEMINI_PROXY_URL.replace(/\/$/, '')}/v1beta/models/${model}:generateContent`, init);
+            } catch (e2) { throw new Error('Ni Google ni le proxy ne sont joignables : ' + e2.message); }
+          } else {
+            throw new Error('Ce poste ne peut pas joindre generativelanguage.googleapis.com (' + netErr.message + '). Le réseau (école, entreprise, VPN, antivirus) ou une extension bloque probablement ce domaine. Essayez un autre réseau (ex. partage de connexion du téléphone) pour confirmer.');
+          }
         }
         if (res.ok) { data = await res.json(); break; }
         const err = await res.json().catch(() => ({}));
