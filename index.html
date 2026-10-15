@@ -969,16 +969,14 @@ function isCloudEnabled() { return isFirebaseConfigured(); }
 let fbDb = null, fbReadyPromise = null;
 function fbReady() {
   if (fbReadyPromise) return fbReadyPromise;
-  if (!isFirebaseConfigured()) {
-    fbReadyPromise = Promise.reject(new Error('Firebase non configuré'));
-    fbReadyPromise.catch(()=>{});
-    return fbReadyPromise;
-  }
-  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
-  fbDb = firebase.firestore();
-  // Authentification anonyme : nécessaire pour les règles de sécurité Firestore
-  fbReadyPromise = firebase.auth().signInAnonymously().then(() => fbDb);
-  fbReadyPromise.catch(e => console.warn('Auth Firebase échouée', e));
+  fbReadyPromise = (async () => {
+    if (!isFirebaseConfigured()) throw new Error('Firebase non configuré ou SDK indisponible.');
+    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+    fbDb = firebase.firestore();
+    const auth = firebase.auth();
+    if (!auth.currentUser) await auth.signInAnonymously();
+    return fbDb;
+  })().catch(e => { fbReadyPromise = null; throw e; });
   return fbReadyPromise;
 }
 
@@ -1021,7 +1019,7 @@ const localSaveLogoSettings = a => localStorage.setItem(KEY_LOGO_SETTINGS, JSON.
 // Cloud R/W (Firestore)
 async function fbReadCollection(name) {
   const db = await fbReady();
-  const snap = await db.collection(name).get();
+  const snap = await db.collection(name).get({ source: 'server' });
   const items = [];
   snap.forEach(d => { try { items.push(JSON.parse(d.data().json)); } catch(e) {} });
   items.sort((a,b) => (a._order ?? 0) - (b._order ?? 0));
@@ -1031,7 +1029,7 @@ async function cloudRead() {
   const db = await fbReady();
   const [qcms, attempts, profiles, shares, scoreDoc, logoDoc] = await Promise.all([
     fbReadCollection('qcms'), fbReadCollection('attempts'), fbReadCollection('profiles'), fbReadCollection('shares'),
-    db.collection('settings').doc('score').get(), db.collection('settings').doc('logo').get()
+    db.collection('settings').doc('score').get({ source: 'server' }), db.collection('settings').doc('logo').get({ source: 'server' })
   ]);
   const parse = d => { try { return d.exists ? JSON.parse(d.data().json) : null; } catch(e) { return null; } };
   return { qcms, attempts, profiles, shares, scoreSettings: parse(scoreDoc), logoSettings: parse(logoDoc) };
@@ -1039,81 +1037,153 @@ async function cloudRead() {
 function getSnapIds() { try { return JSON.parse(localStorage.getItem(KEY_FB_SNAP) || '{}'); } catch(e) { return {}; } }
 function setSnapIds(o) { localStorage.setItem(KEY_FB_SNAP, JSON.stringify(o)); }
 
-// Écrit les éléments ; supprime uniquement ceux qui étaient connus côté cloud et
-// ont été supprimés localement (les ajouts distants non encore lus sont préservés).
-async function cloudWrite(record, { full = false } = {}) {
+// File d'attente persistante : seules les modifications locales sont envoyées.
+const KEY_FB_PENDING = 'qcm_fb_pending_v1';
+let syncQueue = Promise.resolve(), lastSyncError = '', lastCloudSync = null;
+const DATA_KEYS = { qcms: KEY_QCMS, attempts: KEY_ATTEMPTS, profiles: KEY_PROFILES,
+  shares: KEY_SHARES, scoreSettings: KEY_SCORE_SETTINGS, logoSettings: KEY_LOGO_SETTINGS };
+function pendingRead() {
+  const raw = localStorage.getItem(KEY_FB_PENDING);
+  if (!raw) return {};
+  const result = JSON.parse(raw);
+  if (!result || typeof result !== 'object' || Array.isArray(result)) throw new Error('File de synchronisation illisible.');
+  return result;
+}
+function pendingSave(value) { localStorage.setItem(KEY_FB_PENDING, JSON.stringify(value)); }
+function syncSerial(task) {
+  const run = syncQueue.then(task);
+  syncQueue = run.catch(() => {});
+  return run;
+}
+function firebaseErrorMessage(e) {
+  const code = String(e.code || '');
+  if (code.includes('permission-denied')) return 'Firebase refuse l’accès. Vérifiez les règles Firestore des collections qcms, attempts, profiles, shares et settings.';
+  if (code.includes('operation-not-allowed') || code.includes('admin-restricted')) return 'Activez la connexion anonyme dans Firebase Authentication.';
+  if (code.includes('unauthorized-domain')) return 'Ce domaine doit être autorisé dans Firebase Authentication.';
+  if (code.includes('resource-exhausted')) return 'Quota Firebase atteint. Vérifiez les quotas du projet.';
+  if (code.includes('unavailable') || code.includes('network-request-failed')) return 'Firebase est injoignable. Vos modifications restent en attente ; reconnectez-vous puis cliquez sur Synchroniser.';
+  return 'Synchronisation Firebase impossible : ' + (e.message || code || 'erreur inconnue');
+}
+function syncFailure(e) {
+  lastSyncError = firebaseErrorMessage(e);
+  setCloudStatus('error', Object.keys(pendingRead()).length ? 'En attente' : 'Erreur sync');
+}
+function stageChanges(key, value) {
+  const pending = pendingRead();
+  if (FB_COLLECTIONS[key]) {
+    const previous = JSON.parse(localStorage.getItem(DATA_KEYS[key]) || '[]');
+    const oldMap = new Map(previous.map((v, i) => [itemId(v, i), v]));
+    const newMap = new Map(value.map((v, i) => [itemId(v, i), v]));
+    newMap.forEach((v, id) => {
+      if (JSON.stringify(v) !== JSON.stringify(oldMap.get(id))) {
+        pending[key + '/' + id] = { key, id, value: { ...v, _order: v.id ?? Date.now() } };
+      }
+    });
+    oldMap.forEach((v, id) => { if (!newMap.has(id)) pending[key + '/' + id] = { key, id, deleted: true }; });
+  } else {
+    const id = key === 'scoreSettings' ? 'score' : 'logo';
+    pending['settings/' + id] = { key, id, value };
+  }
+  // La file est enregistrée avant le cache : une erreur locale ne perd pas l'intention de sauvegarde.
+  pendingSave(pending);
+  localStorage.setItem(DATA_KEYS[key], JSON.stringify(value));
+}
+async function flushPending() {
+  const pending = pendingRead(), entries = Object.entries(pending);
+  if (!entries.length) return;
   const db = await fbReady();
-  const snapIds = getSnapIds();
-  const ops = [];
-  for (const key of Object.keys(FB_COLLECTIONS)) {
-    const arr = record[key] || [];
-    const ids = arr.map(itemId);
-    arr.forEach((it, i) => ops.push(['set', db.collection(key).doc(ids[i]), { json: JSON.stringify({ ...it, _order: i }), updatedAt: Date.now() }]));
-    const known = full ? [] : (snapIds[key] || []);
-    known.filter(id => !ids.includes(id)).forEach(id => ops.push(['delete', db.collection(key).doc(id)]));
-    snapIds[key] = Array.from(new Set([...(full ? [] : (snapIds[key] || [])).filter(id => ids.includes(id)), ...ids]));
-  }
-  if (record.scoreSettings) ops.push(['set', db.collection('settings').doc('score'), { json: JSON.stringify(record.scoreSettings) }]);
-  if (record.logoSettings)  ops.push(['set', db.collection('settings').doc('logo'),  { json: JSON.stringify(record.logoSettings) }]);
-  for (let i = 0; i < ops.length; i += 400) {
-    const batch = db.batch();
-    ops.slice(i, i + 400).forEach(([t, ref, data]) => t === 'set' ? batch.set(ref, data) : batch.delete(ref));
+  for (let i = 0; i < entries.length; i += 400) {
+    const group = entries.slice(i, i + 400), batch = db.batch();
+    group.forEach(([path, op]) => {
+      const ref = db.collection(FB_COLLECTIONS[op.key] || 'settings').doc(op.id);
+      if (op.deleted) batch.delete(ref);
+      else {
+        const json = JSON.stringify(op.value);
+        if (new TextEncoder().encode(json).length > 950000) throw new Error('Élément trop volumineux pour Firestore (environ 1 Mo maximum). Réduisez le logo ou le QCM ; les modifications restent en attente.');
+        batch.set(ref, { json, updatedAt: Date.now() });
+      }
+    });
     await batch.commit();
+    const current = pendingRead();
+    group.forEach(([path, op]) => {
+      if (JSON.stringify(current[path]) === JSON.stringify(op)) delete current[path];
+    });
+    pendingSave(current);
   }
-  setSnapIds(snapIds);
 }
-
-// Sync cloud → localStorage
+function mergePending(record) {
+  const pending = Object.values(pendingRead());
+  Object.keys(FB_COLLECTIONS).forEach(key => {
+    const map = new Map((record[key] || []).map((v, i) => [itemId(v, i), v]));
+    pending.filter(op => op.key === key).forEach(op => {
+      if (op.deleted) map.delete(op.id);
+      else { const value = { ...op.value }; delete value._order; map.set(op.id, value); }
+    });
+    record[key] = Array.from(map.values());
+  });
+  pending.filter(op => !FB_COLLECTIONS[op.key]).forEach(op => { record[op.key] = op.value; });
+  return record;
+}
 async function syncFromCloud() {
-  if (!isCloudEnabled()) return;
-  setCloudStatus('syncing', 'Sync…');
-  try {
-    const record = await cloudRead();
-    localSaveQCMs(record.qcms); localSaveAttempts(record.attempts);
-    localSaveProfiles(record.profiles); localSaveShares(record.shares);
-    if (record.scoreSettings) localSaveScoreSettings(record.scoreSettings);
-    if (record.logoSettings)  localSaveLogoSettings(record.logoSettings);
-    setSnapIds({ qcms: record.qcms.map(itemId), attempts: record.attempts.map(itemId), profiles: record.profiles.map(itemId), shares: record.shares.map(itemId) });
-    setCloudStatus('synced', 'Cloud ✓');
-    applyLogoDisplay();
-  } catch(e) {
-    console.warn('Sync cloud échouée, mode local', e);
-    setCloudStatus('error', 'Hors ligne');
-  }
+  return syncSerial(async () => {
+    setCloudStatus('syncing', 'Sync…');
+    try {
+      await flushPending();
+      const record = mergePending(await cloudRead());
+      localSaveQCMs(record.qcms); localSaveAttempts(record.attempts);
+      localSaveProfiles(record.profiles); localSaveShares(record.shares);
+      if (record.scoreSettings) localSaveScoreSettings(record.scoreSettings);
+      if (record.logoSettings) localSaveLogoSettings(record.logoSettings);
+      setSnapIds({ qcms: record.qcms.map(itemId), attempts: record.attempts.map(itemId), profiles: record.profiles.map(itemId), shares: record.shares.map(itemId) });
+      lastSyncError = ''; lastCloudSync = new Date();
+      setCloudStatus(Object.keys(pendingRead()).length ? 'syncing' : 'synced', Object.keys(pendingRead()).length ? 'En attente' : 'Cloud ✓');
+      applyLogoDisplay();
+      return record;
+    } catch(e) { syncFailure(e); throw e; }
+  });
 }
-
-// Push localStorage → cloud
 async function pushToCloud() {
-  if (!isCloudEnabled()) return;
-  setCloudStatus('syncing', 'Sauvegarde…');
-  try {
-    await cloudWrite({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles(), shares: localGetShares(), logoSettings: localGetLogoSettings() });
-    setCloudStatus('synced', 'Cloud ✓');
-  } catch(e) {
-    console.warn('Push cloud échoué', e);
-    setCloudStatus('error', 'Erreur sync');
-  }
+  return syncSerial(async () => {
+    setCloudStatus('syncing', 'Sauvegarde…');
+    try {
+      await flushPending();
+      lastSyncError = ''; lastCloudSync = new Date();
+      const waiting = Object.keys(pendingRead()).length;
+      setCloudStatus(waiting ? 'syncing' : 'synced', waiting ? 'En attente' : 'Cloud ✓');
+    } catch(e) { syncFailure(e); throw e; }
+  });
 }
-
 function setCloudStatus(state, label) {
   const btn = $('cloudBtn'), lbl = $('cloudBtnLabel');
-  btn.className = 'cloud-btn ' + state;
-  lbl.textContent = label;
+  if (btn) { btn.className = 'cloud-btn ' + state; btn.title = lastSyncError || label; }
+  if (lbl) lbl.textContent = label;
+  if ($('fbStatusBox')) renderFbStatus();
 }
-
-// Wrappers publics utilisés dans tout le reste du code
-const getQCMs     = () => localGetQCMs();
+const getQCMs = () => localGetQCMs();
 const getAttempts = () => localGetAttempts();
 const getScoreSettings = () => localGetScoreSettings();
 const getProfiles = () => localGetProfiles();
 const getShares = () => localGetShares();
-async function saveQCMs(a)     { localSaveQCMs(a);     await pushToCloud(); }
-async function saveAttempts(a) { localSaveAttempts(a); await pushToCloud(); }
-async function saveScoreSettings(a) { localSaveScoreSettings(a); await pushToCloud(); }
-async function saveProfiles(a) { localSaveProfiles(a); await pushToCloud(); }
-async function saveShares(a)   { localSaveShares(a);    await pushToCloud(); }
 const getLogoSettings = () => localGetLogoSettings();
-async function saveLogoSettings(a) { localSaveLogoSettings(a); await pushToCloud(); }
+async function saveData(key, value) { stageChanges(key, value); await pushToCloud(); }
+async function saveQCMs(a) { await saveData('qcms', a); }
+async function saveAttempts(a) { await saveData('attempts', a); }
+async function saveProfiles(a) { await saveData('profiles', a); }
+async function saveShares(a) { await saveData('shares', a); }
+async function saveScoreSettings(a) { await saveData('scoreSettings', a); }
+async function saveLogoSettings(a) { await saveData('logoSettings', a); }
+// Tous les formulaires asynchrones conservent leur contenu si la sauvegarde échoue.
+window.addEventListener('unhandledrejection', event => {
+  event.preventDefault();
+  const message = lastSyncError || firebaseErrorMessage(event.reason || {});
+  showToast(message);
+});
+function backgroundSync() {
+  if (!navigator.onLine || document.visibilityState === 'hidden') return;
+  syncFromCloud().catch(() => {});
+}
+window.addEventListener('online', backgroundSync);
+window.addEventListener('focus', backgroundSync);
 
 function showToast(msg) {
   const t = $('toast');
@@ -1125,24 +1195,23 @@ function showToast(msg) {
 // ─── Cloud modal (Firebase) ───────────────────────────────
 function renderFbStatus() {
   const box = $('fbStatusBox');
-  if (!isFirebaseConfigured()) {
-    box.innerHTML = `<div style="font-weight:600;color:var(--danger-light)">⚠ Firebase non configuré</div>
-      <div>Renseignez la constante <code>FIREBASE_CONFIG</code> dans le fichier HTML (voir guide fourni). L'appli fonctionne en mode local en attendant.</div>`;
-  } else {
-    box.innerHTML = `<div style="font-weight:600;color:var(--success-light)">✓ Connecté à Firebase</div>
-      <div>Projet : <code>${FIREBASE_CONFIG.projectId}</code></div>`;
-  }
+  if (!box) return;
+  const waiting = Object.keys(pendingRead()).length;
+  const status = lastSyncError || (waiting ? waiting + ' modification(s) en attente.' : lastCloudSync ? 'Dernière synchronisation confirmée : ' + lastCloudSync.toLocaleTimeString('fr-FR') : 'Connexion Firebase en cours de vérification.');
+  box.textContent = 'Projet : ' + FIREBASE_CONFIG.projectId + ' — ' + status;
 }
-function openCloudModal() {
-  renderFbStatus();
-  show('cloudModal');
-}
+function openCloudModal() { renderFbStatus(); show('cloudModal'); }
 function closeCloudModal() { hide('cloudModal'); }
 $('cloudModal').addEventListener('click', e => { if (e.target === $('cloudModal')) closeCloudModal(); });
-
 async function manualSync() {
-  await syncFromCloud();
-  showToast(isCloudEnabled() ? 'Données synchronisées depuis Firebase.' : 'Firebase non configuré.');
+  try {
+    await syncFromCloud();
+    if (role) {
+      renderManage(); renderQuizList(); renderHistory(); renderSharedResults(); renderStats();
+      if (role === 'admin') renderProfiles();
+    }
+    showToast('Modifications envoyées et données récupérées depuis Firebase.');
+  } catch(e) { showToast(lastSyncError || firebaseErrorMessage(e)); }
 }
 
 function openPasswordModal(r) {
@@ -1197,10 +1266,10 @@ function login(r, profile) {
   if (r === 'admin' || r === 'creator') {
     show('apiKeyBtn'); updateApiKeyUI();
     show('cloudBtn');
-    if (isCloudEnabled()) { setCloudStatus('synced','Cloud ✓'); syncFromCloud().then(()=>{ goTab(defaultTab); }); }
+    if (isCloudEnabled()) { syncFromCloud().then(()=>{ goTab(defaultTab); }).catch(()=>{}); }
     else setCloudStatus('','Sync cloud');
   }
-  else { hide('apiKeyBtn'); hide('cloudBtn'); if (isCloudEnabled()) syncFromCloud().then(()=>renderQuizList()); }
+  else { hide('apiKeyBtn'); hide('cloudBtn'); if (isCloudEnabled()) syncFromCloud().then(()=>renderQuizList()).catch(()=>{}); }
   goTab(defaultTab);
 }
 function logout() {
@@ -2603,8 +2672,9 @@ async function finishQuiz() {
     }
 
     try {
-      const db = await fbReady();
-      await db.collection('attempts').doc(itemId(attempt, 0)).set({ json: JSON.stringify({ ...attempt, _order: Date.now() }), updatedAt: Date.now() });
+      const attempts = getAttempts().filter(a => a.id !== attempt.id);
+      attempts.push(attempt);
+      await saveAttempts(attempts);
       if (statusEl) {
         statusEl.textContent = '✓ Résultats envoyés avec succès ! Vous pouvez fermer cette page.';
         statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30;margin-top:8px`;
@@ -2612,7 +2682,7 @@ async function finishQuiz() {
     } catch(e) {
       console.error('Push remote échoué:', e);
       if (statusEl) {
-        statusEl.textContent = `✗ Erreur lors de l'envoi : ${e.message}`;
+        statusEl.textContent = `✗ ${lastSyncError || firebaseErrorMessage(e)} — Résultat conservé sur cet appareil.`;
         statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--danger-bg);color:var(--danger-light);border:1px solid #4d1f1f;margin-top:8px`;
       }
     }
@@ -2912,7 +2982,7 @@ self.addEventListener('fetch',e=>{
 renderQuestions();
 applyLogoDisplay();
 if (!checkTokenInURL()) {
-  if (isCloudEnabled()) syncFromCloud();
+  if (isCloudEnabled()) syncFromCloud().catch(()=>{});
   // Mode normal — rien à faire, l'écran de login est visible par défaut
 }
 </script>
