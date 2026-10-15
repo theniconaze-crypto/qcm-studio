@@ -218,6 +218,10 @@ textarea{resize:vertical;min-height:60px}
   .options-grid{grid-template-columns:1fr}
 }
 </style>
+<!-- Firebase SDK (compat) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 <body>
 <div class="app">
@@ -301,42 +305,13 @@ textarea{resize:vertical;min-height:60px}
       <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
       Stockage cloud partagé
     </div>
-    <div class="modal-sub">Vos QCM seront accessibles depuis n'importe quel appareil ou navigateur. Utilise <strong style="color:var(--text)">JSONBin.io</strong> — gratuit, sans inscription requise.</div>
+    <div class="modal-sub">Vos QCM, résultats et comptes sont stockés dans <strong style="color:var(--text)">Firebase (Firestore)</strong> et synchronisés automatiquement sur tous vos appareils.</div>
 
-    <div style="background:var(--surface3);border-radius:var(--radius);padding:12px;margin-bottom:14px;font-size:12px;line-height:1.8;color:var(--text2)">
-      <div style="font-weight:600;color:var(--text);margin-bottom:6px">⚡ Comment configurer (1 minute) :</div>
-      <div>1. Allez sur <strong style="color:var(--accent-light)">jsonbin.io</strong> → <em>Sign up</em> (gratuit)</div>
-      <div>2. Dashboard → <em>API Keys</em> → copiez votre <strong>Master Key</strong> (<code style="background:var(--surface2);padding:1px 5px;border-radius:3px">$2a$…</code>)</div>
-      <div>3. Collez-la ci-dessous et cliquez <em>Connecter</em> — un espace de stockage sera créé automatiquement</div>
-    </div>
-
-    <div style="margin-bottom:12px">
-      <label>Clé Master JSONBin <span style="color:var(--text3);font-weight:400">(commence par <code style="font-size:11px;background:var(--surface3);padding:1px 5px;border-radius:4px">$2a$</code>)</span></label>
-      <div class="pw-wrap" style="margin-bottom:6px">
-        <input type="password" id="jsonbinKeyInput" placeholder="$2a$10$…" style="font-family:monospace;font-size:12px" onkeydown="if(event.key==='Enter')connectCloud()">
-        <button class="pw-toggle" onclick="toggleField('jsonbinKeyInput')">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <div style="margin-bottom:14px">
-      <label>ID du bin <span style="color:var(--text3);font-weight:400">(rempli automatiquement à la première connexion)</span></label>
-      <input type="text" id="jsonbinIdInput" placeholder="Laissez vide pour créer automatiquement" style="font-family:monospace;font-size:12px">
-    </div>
-
-    <div id="cloudError" class="modal-error hidden" style="margin-bottom:10px"></div>
-    <div id="cloudSuccess" style="font-size:12px;color:var(--success-light);background:var(--success-bg);border:1px solid #1a4d30;padding:8px 12px;border-radius:6px;margin-bottom:10px;display:none">
-      ✓ <span id="cloudSuccessMsg"></span>
-    </div>
+    <div id="fbStatusBox" style="background:var(--surface3);border-radius:var(--radius);padding:12px;margin-bottom:14px;font-size:12px;line-height:1.8;color:var(--text2)"></div>
 
     <div class="modal-btns">
-      <button class="btn btn-primary" onclick="connectCloud()" style="flex:1" id="cloudConnectBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>
-        Connecter
-      </button>
+      <button class="btn" onclick="manualSync()">Synchroniser</button>
       <button class="btn" onclick="closeCloudModal()">Fermer</button>
-      <button class="btn btn-danger btn-sm" id="cloudDisconnectBtn" style="display:none" onclick="disconnectCloud()">Déconnecter</button>
     </div>
   </div>
 </div>
@@ -737,7 +712,7 @@ textarea{resize:vertical;min-height:60px}
             <div style="font-size:12px;color:var(--text2)">Crée un lien unique à envoyer. La personne passe le test sur son appareil et les résultats arrivent automatiquement.</div>
           </div>
           <div id="noCloudWarning" style="display:none;font-size:11px;color:var(--warning-light);background:var(--warning-bg);padding:6px 10px;border-radius:6px;margin-top:8px;border:1px solid #4d3a0a">
-            ⚠ JSONBin non configuré — les résultats distants ne pourront pas être récupérés.
+            ⚠ Firebase non configuré — les résultats distants ne pourront pas être récupérés.
           </div>
         </div>
       </div>
@@ -763,14 +738,14 @@ textarea{resize:vertical;min-height:60px}
           </button>
         </div>
         <div style="font-size:11px;color:var(--text3);margin-top:6px">
-          ⚠ Ce lien contient votre clé JSONBin. Ne le partagez qu'avec la personne concernée et via un canal privé. Il expire 24h après sa création.
+          Ce lien ne contient aucune clé secrète. Il expire 24h après sa création.
         </div>
       </div>
       <div style="background:var(--success-bg);border:1px solid #1a4d30;border-radius:8px;padding:12px;font-size:12px;color:var(--success-light);line-height:1.7">
         <strong>Comment ça marche :</strong><br>
         1. Copiez et envoyez ce lien au candidat<br>
         2. Il ouvre le lien et passe le test sur son appareil<br>
-        3. À la fin, les résultats sont automatiquement envoyés dans votre JSONBin<br>
+        3. À la fin, les résultats sont automatiquement envoyés dans votre base Firebase<br>
         4. Rechargez les statistiques pour les voir apparaître
       </div>
       <div class="modal-btns" style="margin-top:16px">
@@ -955,16 +930,24 @@ let editingQcmId = null;
 let currentQIdx = 0, userAnswers = [], timerInterval = null, timeLeft = 0;
 let currentUsername = '';
 
-// ─── Storage — Cloud (JSONBin) + localStorage fallback ────────────────────────
+// ─── Storage — Cloud (Firebase Firestore) + localStorage cache ────────────────
+// >>> COLLEZ ICI LA CONFIGURATION DE VOTRE PROJET FIREBASE <<<
+// (Console Firebase → Paramètres du projet → Vos applications → Application Web)
+const FIREBASE_CONFIG = {
+  apiKey:            "AIzaSyC4HldPfxYxHna-gfxsL_pSOlrSCqfz8no",
+  authDomain:        "qcm-studio.firebaseapp.com",
+  projectId:         "qcm-studio",
+  storageBucket:     "qcm-studio.firebasestorage.app",
+  messagingSenderId: "237256355255",
+  appId:             "1:237256355255:web:8bccdb1b2fb3b852e80c32"
+};
 const KEY_QCMS     = 'qcm_studio_v2_qcms';
 const KEY_ATTEMPTS = 'qcm_studio_v2_attempts';
 const KEY_SCORE_SETTINGS = 'qcm_studio_v2_score_settings';
 const KEY_PROFILES = 'qcm_studio_v2_profiles';
 const KEY_SHARES   = 'qcm_studio_v2_shares';
 const KEY_LOGO_SETTINGS = 'qcm_studio_v2_logo_settings';
-const KEY_JB_KEY   = 'qcm_jsonbin_masterkey';
-const KEY_JB_BIN   = 'qcm_jsonbin_binid';
-const JSONBIN_BASE = 'https://api.jsonbin.io/v3';
+const KEY_FB_SNAP  = 'qcm_fb_snapshot_ids';     // ids connus côté cloud (pour suppressions)
 
 const DEFAULT_SCORE_SETTINGS = [
   { key:'bad',  min:0,  color:'#ef4444', label:'Insuffisant', passed:false },
@@ -978,13 +961,31 @@ const DEFAULT_LOGO_SETTINGS = {
   header: { position: 'left',   sizePct: 100 }
 };
 
-function getJBConfig() {
-  return {
-    masterKey: localStorage.getItem(KEY_JB_KEY) || '',
-    binId:     localStorage.getItem(KEY_JB_BIN) || ''
-  };
+function isFirebaseConfigured() {
+  return typeof firebase !== 'undefined' && !!FIREBASE_CONFIG.apiKey && !FIREBASE_CONFIG.apiKey.startsWith('VOTRE');
 }
-function isCloudEnabled() { const c = getJBConfig(); return !!(c.masterKey && c.binId); }
+function isCloudEnabled() { return isFirebaseConfigured(); }
+
+let fbDb = null, fbReadyPromise = null;
+function fbReady() {
+  if (fbReadyPromise) return fbReadyPromise;
+  if (!isFirebaseConfigured()) {
+    fbReadyPromise = Promise.reject(new Error('Firebase non configuré'));
+    fbReadyPromise.catch(()=>{});
+    return fbReadyPromise;
+  }
+  if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+  fbDb = firebase.firestore();
+  // Authentification anonyme : nécessaire pour les règles de sécurité Firestore
+  fbReadyPromise = firebase.auth().signInAnonymously().then(() => fbDb);
+  fbReadyPromise.catch(e => console.warn('Auth Firebase échouée', e));
+  return fbReadyPromise;
+}
+
+// Collections Firestore : 1 document par élément, contenu stocké en JSON
+// (évite les limites Firestore : tableaux imbriqués, valeurs undefined, 1 Mo par doc)
+const FB_COLLECTIONS = { qcms: 'qcms', attempts: 'attempts', profiles: 'profiles', shares: 'shares' };
+const itemId = (it, i) => String((it && it.id) != null ? it.id : 'idx_' + i).replace(/\//g, '_');
 
 // Local helpers (toujours utilisés comme cache)
 const localGetQCMs     = () => { try { return JSON.parse(localStorage.getItem(KEY_QCMS)||'[]'); } catch(e){ return []; }};
@@ -1017,25 +1018,49 @@ const localGetLogoSettings = () => {
 };
 const localSaveLogoSettings = a => localStorage.setItem(KEY_LOGO_SETTINGS, JSON.stringify(a));
 
-// Cloud R/W
-async function cloudRead() {
-  const { masterKey, binId } = getJBConfig();
-  const res = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
-    headers: { 'X-Master-Key': masterKey }
-  });
-  if (!res.ok) throw new Error(`Lecture cloud échouée (${res.status})`);
-  const data = await res.json();
-  return data.record; // { qcms: [], attempts: [] }
+// Cloud R/W (Firestore)
+async function fbReadCollection(name) {
+  const db = await fbReady();
+  const snap = await db.collection(name).get();
+  const items = [];
+  snap.forEach(d => { try { items.push(JSON.parse(d.data().json)); } catch(e) {} });
+  items.sort((a,b) => (a._order ?? 0) - (b._order ?? 0));
+  return items.map(it => { const c = { ...it }; delete c._order; return c; });
 }
+async function cloudRead() {
+  const db = await fbReady();
+  const [qcms, attempts, profiles, shares, scoreDoc, logoDoc] = await Promise.all([
+    fbReadCollection('qcms'), fbReadCollection('attempts'), fbReadCollection('profiles'), fbReadCollection('shares'),
+    db.collection('settings').doc('score').get(), db.collection('settings').doc('logo').get()
+  ]);
+  const parse = d => { try { return d.exists ? JSON.parse(d.data().json) : null; } catch(e) { return null; } };
+  return { qcms, attempts, profiles, shares, scoreSettings: parse(scoreDoc), logoSettings: parse(logoDoc) };
+}
+function getSnapIds() { try { return JSON.parse(localStorage.getItem(KEY_FB_SNAP) || '{}'); } catch(e) { return {}; } }
+function setSnapIds(o) { localStorage.setItem(KEY_FB_SNAP, JSON.stringify(o)); }
 
-async function cloudWrite(record) {
-  const { masterKey, binId } = getJBConfig();
-  const res = await fetch(`${JSONBIN_BASE}/b/${binId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'X-Master-Key': masterKey },
-    body: JSON.stringify(record)
-  });
-  if (!res.ok) throw new Error(`Écriture cloud échouée (${res.status})`);
+// Écrit les éléments ; supprime uniquement ceux qui étaient connus côté cloud et
+// ont été supprimés localement (les ajouts distants non encore lus sont préservés).
+async function cloudWrite(record, { full = false } = {}) {
+  const db = await fbReady();
+  const snapIds = getSnapIds();
+  const ops = [];
+  for (const key of Object.keys(FB_COLLECTIONS)) {
+    const arr = record[key] || [];
+    const ids = arr.map(itemId);
+    arr.forEach((it, i) => ops.push(['set', db.collection(key).doc(ids[i]), { json: JSON.stringify({ ...it, _order: i }), updatedAt: Date.now() }]));
+    const known = full ? [] : (snapIds[key] || []);
+    known.filter(id => !ids.includes(id)).forEach(id => ops.push(['delete', db.collection(key).doc(id)]));
+    snapIds[key] = Array.from(new Set([...(full ? [] : (snapIds[key] || [])).filter(id => ids.includes(id)), ...ids]));
+  }
+  if (record.scoreSettings) ops.push(['set', db.collection('settings').doc('score'), { json: JSON.stringify(record.scoreSettings) }]);
+  if (record.logoSettings)  ops.push(['set', db.collection('settings').doc('logo'),  { json: JSON.stringify(record.logoSettings) }]);
+  for (let i = 0; i < ops.length; i += 400) {
+    const batch = db.batch();
+    ops.slice(i, i + 400).forEach(([t, ref, data]) => t === 'set' ? batch.set(ref, data) : batch.delete(ref));
+    await batch.commit();
+  }
+  setSnapIds(snapIds);
 }
 
 // Sync cloud → localStorage
@@ -1044,12 +1069,11 @@ async function syncFromCloud() {
   setCloudStatus('syncing', 'Sync…');
   try {
     const record = await cloudRead();
-    if (record?.qcms)          localSaveQCMs(record.qcms);
-    if (record?.attempts)      localSaveAttempts(record.attempts);
-    if (record?.scoreSettings) localSaveScoreSettings(record.scoreSettings);
-    if (record?.profiles)      localSaveProfiles(record.profiles);
-    if (record?.shares)        localSaveShares(record.shares);
-    if (record?.logoSettings)  localSaveLogoSettings(record.logoSettings);
+    localSaveQCMs(record.qcms); localSaveAttempts(record.attempts);
+    localSaveProfiles(record.profiles); localSaveShares(record.shares);
+    if (record.scoreSettings) localSaveScoreSettings(record.scoreSettings);
+    if (record.logoSettings)  localSaveLogoSettings(record.logoSettings);
+    setSnapIds({ qcms: record.qcms.map(itemId), attempts: record.attempts.map(itemId), profiles: record.profiles.map(itemId), shares: record.shares.map(itemId) });
     setCloudStatus('synced', 'Cloud ✓');
     applyLogoDisplay();
   } catch(e) {
@@ -1098,94 +1122,28 @@ function showToast(msg) {
   setTimeout(() => t.classList.add('hidden'), 2800);
 }
 
-// ─── Cloud modal ──────────────────────────────────────────────────────────────
+// ─── Cloud modal (Firebase) ───────────────────────────────
+function renderFbStatus() {
+  const box = $('fbStatusBox');
+  if (!isFirebaseConfigured()) {
+    box.innerHTML = `<div style="font-weight:600;color:var(--danger-light)">⚠ Firebase non configuré</div>
+      <div>Renseignez la constante <code>FIREBASE_CONFIG</code> dans le fichier HTML (voir guide fourni). L'appli fonctionne en mode local en attendant.</div>`;
+  } else {
+    box.innerHTML = `<div style="font-weight:600;color:var(--success-light)">✓ Connecté à Firebase</div>
+      <div>Projet : <code>${FIREBASE_CONFIG.projectId}</code></div>`;
+  }
+}
 function openCloudModal() {
-  const { masterKey, binId } = getJBConfig();
-  $('jsonbinKeyInput').value = masterKey;
-  $('jsonbinIdInput').value  = binId;
-  hide('cloudError');
-  $('cloudSuccess').style.display = 'none';
-  $('cloudDisconnectBtn').style.display = isCloudEnabled() ? 'inline-flex' : 'none';
+  renderFbStatus();
   show('cloudModal');
-  setTimeout(() => $('jsonbinKeyInput').focus(), 80);
 }
 function closeCloudModal() { hide('cloudModal'); }
 $('cloudModal').addEventListener('click', e => { if (e.target === $('cloudModal')) closeCloudModal(); });
 
-async function connectCloud() {
-  const masterKey = $('jsonbinKeyInput').value.trim();
-  const binIdInput = $('jsonbinIdInput').value.trim();
-  hide('cloudError'); $('cloudSuccess').style.display = 'none';
-
-  if (!masterKey.startsWith('$2a$')) {
-    show('cloudError'); $('cloudError').textContent = 'La clé Master JSONBin doit commencer par "$2a$".';
-    return;
-  }
-
-  $('cloudConnectBtn').disabled = true;
-  $('cloudConnectBtn').textContent = 'Connexion…';
-
-  try {
-    let binId = binIdInput;
-
-    if (!binId) {
-      // Créer un nouveau bin
-      const res = await fetch(`${JSONBIN_BASE}/b`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Master-Key': masterKey,
-          'X-Bin-Name': 'QCM Studio',
-          'X-Bin-Private': 'true'
-        },
-        body: JSON.stringify({ qcms: localGetQCMs(), attempts: localGetAttempts(), scoreSettings: localGetScoreSettings(), profiles: localGetProfiles() })
-      });
-      if (!res.ok) {
-        const err = await res.json().catch(()=>({}));
-        throw new Error(err.message || `Erreur ${res.status} — vérifiez votre clé Master`);
-      }
-      const data = await res.json();
-      binId = data.metadata.id;
-      $('jsonbinIdInput').value = binId;
-      $('cloudSuccessMsg').textContent = `Bin créé (ID: ${binId}). Vos données locales ont été importées.`;
-    } else {
-      // Vérifier l'accès au bin existant
-      const res = await fetch(`${JSONBIN_BASE}/b/${binId}/latest`, {
-        headers: { 'X-Master-Key': masterKey }
-      });
-      if (!res.ok) throw new Error(`Bin introuvable ou accès refusé (${res.status})`);
-      const data = await res.json();
-      // Importer les données cloud en local
-      if (data.record?.qcms)     localSaveQCMs(data.record.qcms);
-      if (data.record?.attempts) localSaveAttempts(data.record.attempts);
-      if (data.record?.profiles) localSaveProfiles(data.record.profiles);
-      $('cloudSuccessMsg').textContent = `Connecté au bin ${binId}. Données cloud importées.`;
-    }
-
-    localStorage.setItem(KEY_JB_KEY, masterKey);
-    localStorage.setItem(KEY_JB_BIN, binId);
-    $('cloudSuccess').style.display = 'block';
-    $('cloudDisconnectBtn').style.display = 'inline-flex';
-    setCloudStatus('synced', 'Cloud ✓');
-
-  } catch(e) {
-    show('cloudError'); $('cloudError').textContent = e.message;
-  } finally {
-    $('cloudConnectBtn').disabled = false;
-    $('cloudConnectBtn').innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg> Connecter`;
-  }
+async function manualSync() {
+  await syncFromCloud();
+  showToast(isCloudEnabled() ? 'Données synchronisées depuis Firebase.' : 'Firebase non configuré.');
 }
-
-function disconnectCloud() {
-  if (!confirm('Déconnecter le cloud ? Les données restent en local.')) return;
-  localStorage.removeItem(KEY_JB_KEY);
-  localStorage.removeItem(KEY_JB_BIN);
-  hide('cloudModal');
-  $('cloudDisconnectBtn').style.display = 'none';
-  setCloudStatus('', 'Sync cloud');
-  showToast('Cloud déconnecté — mode local activé.');
-}
-
 
 function openPasswordModal(r) {
   pendingLoginRole = r || 'admin';
@@ -2390,7 +2348,7 @@ function goToStep2() {
   currentUsername = name;
   localStorage.setItem('qcm_last_username', name);
   $('step2NameLabel').textContent = name;
-  // Avertir si JSONBin non configuré
+  // Avertir si Firebase non configuré
   $('noCloudWarning').style.display = isCloudEnabled() ? 'none' : 'block';
   $('usernameStep1').style.display = 'none';
   $('usernameStep2').style.display = 'block';
@@ -2412,12 +2370,9 @@ function chooseLink() {
 }
 
 function generateShareLink() {
-  const { masterKey, binId } = getJBConfig();
   const payload = {
     qcmId: currentQCM.id,
     userName: currentUsername,
-    jbKey: masterKey,
-    binId: binId,
     // Identité de la personne qui génère le lien (créateur, utilisateur ou admin),
     // afin que le résultat du candidat distant lui soit bien rattaché et visible
     // dans son propre historique / ses stats une fois de retour dans l'appli.
@@ -2463,7 +2418,7 @@ function checkTokenInURL() {
   try {
     const payload = JSON.parse(decodeURIComponent(escape(atob(token))));
     const { qcmId, userName, jbKey, binId, generatorProfileId, generatorRole, createdAt } = payload;
-    if (!qcmId || !userName || !jbKey || !binId) return false;
+    if (!qcmId || !userName) return false;
 
     // Expiration du lien après 24h. Les liens générés avant cette mise à
     // jour n'ont pas de createdAt : on les laisse fonctionner sans limite.
@@ -2477,7 +2432,7 @@ function checkTokenInURL() {
     }
 
     remoteMode = true;
-    remoteConfig = { jbKey, binId };
+    remoteConfig = { firebase: true };
     currentUsername = userName;
     // Peut être absent sur d'anciens liens déjà générés avant cette correction :
     // dans ce cas le résultat ne remontera que pour l'admin, comme avant.
@@ -2488,12 +2443,11 @@ function checkTokenInURL() {
     document.querySelector('.header').style.display = 'none';
     hide('viewLogin'); hide('viewApp');
 
-    // Charger les QCMs depuis JSONBin pour trouver le bon
+    // Charger les QCMs depuis Firebase pour trouver le bon
     setRemoteStatus('Chargement du QCM…');
-    fetch(`${JSONBIN_BASE}/b/${binId}/latest`, { headers: { 'X-Master-Key': jbKey } })
-      .then(r => r.json())
-      .then(data => {
-        const qcms = data.record?.qcms || [];
+    fbReady()
+      .then(() => fbReadCollection('qcms'))
+      .then(qcms => {
         const qcm = qcms.find(q => q.id === qcmId);
         if (!qcm) { setRemoteStatus('QCM introuvable. Vérifiez le lien.', true); return; }
         currentQCM = qcm;
@@ -2649,19 +2603,8 @@ async function finishQuiz() {
     }
 
     try {
-      const res = await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}/latest`, {
-        headers: { 'X-Master-Key': remoteConfig.jbKey }
-      });
-      if (!res.ok) throw new Error(`Lecture échouée (${res.status})`);
-      const data = await res.json();
-      const record = data.record || { qcms: [], attempts: [] };
-      record.attempts = [...(record.attempts || []), attempt];
-      const putRes = await fetch(`${JSONBIN_BASE}/b/${remoteConfig.binId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'X-Master-Key': remoteConfig.jbKey },
-        body: JSON.stringify(record)
-      });
-      if (!putRes.ok) throw new Error(`Écriture échouée (${putRes.status})`);
+      const db = await fbReady();
+      await db.collection('attempts').doc(itemId(attempt, 0)).set({ json: JSON.stringify({ ...attempt, _order: Date.now() }), updatedAt: Date.now() });
       if (statusEl) {
         statusEl.textContent = '✓ Résultats envoyés avec succès ! Vous pouvez fermer cette page.';
         statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30;margin-top:8px`;
@@ -2969,6 +2912,7 @@ self.addEventListener('fetch',e=>{
 renderQuestions();
 applyLogoDisplay();
 if (!checkTokenInURL()) {
+  if (isCloudEnabled()) syncFromCloud();
   // Mode normal — rien à faire, l'écran de login est visible par défaut
 }
 </script>
