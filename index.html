@@ -1452,7 +1452,9 @@ const PROVIDERS = {
 };
 let currentProvider = localStorage.getItem('qcm_provider') || 'gemini';
 
-function getStoredKey(p) { const s = localStorage.getItem(PROVIDERS[p].key); if (s && s !== 'SERVEUR') return s; return (p === 'gemini' ? 'AQ.Ab8RN6JMchyEuXTrbLA8S1JOlQoelzmVq-4Rc5OaI0EkHz7dhQ' : ''); }
+// Clé Gemini par défaut (optionnelle) : à renseigner ici UNIQUEMENT avec une clé valide et restreinte.
+const DEFAULT_GEMINI_KEY = '';
+function getStoredKey(p) { const s = (localStorage.getItem(PROVIDERS[p].key) || '').trim(); if (s && s !== 'SERVEUR') return s; return (p === 'gemini' ? DEFAULT_GEMINI_KEY : ''); }
 function getActiveKey()  { return getStoredKey(currentProvider); }
 
 function updateApiKeyUI() {
@@ -1571,37 +1573,50 @@ async function generateWithAI() {
       raw = data.choices?.[0]?.message?.content || '';
 
     } else if (currentProvider === 'gemini') {
-      const res = await fetch(
-        (apiKey === 'SERVEUR' ? '/api/public/gemini' : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`),
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
-            contents: [{ role: 'user', parts: [{ text: userMsg }] }],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 8192,
-              responseMimeType: 'application/json',
-              thinkingConfig: { thinkingBudget: 0 }
-            }
-          })
+      const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.0-flash'];
+      let lastErr = null, data = null;
+      for (const model of models) {
+        const url = apiKey === 'SERVEUR' ? '/api/public/gemini'
+          : `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
+        const gc = { temperature: 0.7, maxOutputTokens: 8192, responseMimeType: 'application/json' };
+        if (model.startsWith('gemini-2.5')) gc.thinkingConfig = { thinkingBudget: 0 };
+        let res;
+        try {
+          res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: SYSTEM_PROMPT }] },
+              contents: [{ role: 'user', parts: [{ text: userMsg }] }],
+              generationConfig: gc
+            })
+          });
+        } catch (netErr) {
+          throw new Error('Impossible de joindre Google (réseau, pare-feu ou bloqueur de pub/extension).');
         }
-      );
-      if (!res.ok) {
+        if (res.ok) { data = await res.json(); break; }
         const err = await res.json().catch(() => ({}));
-        if (res.status === 400 || res.status === 403) { show('apiKeyError'); $('apiKeyError').textContent = 'Clé Gemini invalide ou non autorisée.'; openApiModal(); return; }
-        if (res.status === 429) throw new Error('Quota Gemini dépassé. Attendez et réessayez.');
-        throw new Error(err.error?.message || `Erreur ${res.status}`);
+        const msg = err.error?.message || `Erreur ${res.status}`;
+        const keyProblem = /api key|API_KEY|permission|denied|disabled|leaked|expired/i.test(msg + (err.error?.status || ''));
+        if (res.status === 401 || res.status === 403 || (res.status === 400 && keyProblem)) {
+          show('apiKeyError');
+          $('apiKeyError').textContent = 'Clé Gemini refusée par Google : ' + msg;
+          openApiModal(); return;
+        }
+        lastErr = new Error(res.status === 429 ? 'Quota Gemini dépassé. Attendez et réessayez.' : msg);
+        if (res.status === 404 || res.status === 429 || res.status >= 500) continue; // essayer le modèle suivant
+        throw lastErr;
       }
-      const data = await res.json();
-      // Gemini peut retourner plusieurs parts (thinking + response), on prend le dernier texte
+      if (!data) throw lastErr || new Error('Aucune réponse de Gemini.');
+      if (data.promptFeedback?.blockReason) throw new Error('Requête bloquée par Gemini : ' + data.promptFeedback.blockReason);
       const parts = data.candidates?.[0]?.content?.parts || [];
-      raw = parts.map(p => p.text || '').join('');
+      raw = parts.filter(p => !p.thought).map(p => p.text || '').join('');
+      if (!raw.trim()) throw new Error('Réponse vide de Gemini (' + (data.candidates?.[0]?.finishReason || 'inconnue') + ').');
     }
 
     // Nettoyage robuste : extraire le tableau JSON même si entouré de texte
     let clean = raw.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+    { const st = clean.search(/[\[{]/); if (st > 0) clean = clean.slice(st); }
     // Si le JSON est tronqué, tenter de le réparer en fermant le tableau
     if (!clean.endsWith(']')) {
       const lastComma = clean.lastIndexOf(',');
