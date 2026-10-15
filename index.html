@@ -1452,7 +1452,7 @@ const PROVIDERS = {
 };
 let currentProvider = localStorage.getItem('qcm_provider') || 'gemini';
 
-function getStoredKey(p) { return localStorage.getItem(PROVIDERS[p].key) || (p === 'gemini' ? 'SERVEUR' : ''); }
+function getStoredKey(p) { const s = localStorage.getItem(PROVIDERS[p].key); if (s && s !== 'SERVEUR') return s; return (p === 'gemini' ? 'AQ.Ab8RN6JMchyEuXTrbLA8S1JOlQoelzmVq-4Rc5OaI0EkHz7dhQ' : ''); }
 function getActiveKey()  { return getStoredKey(currentProvider); }
 
 function updateApiKeyUI() {
