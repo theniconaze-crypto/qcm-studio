@@ -3,22 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#1a1f2e">
+<meta name="theme-color" content="#12171f">
 <title>QCM Studio</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="manifest" id="manifestLink">
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#0f1117;--surface:#1a1f2e;--surface2:#212840;--surface3:#2a3050;
-  --border:#2e3555;--border2:#3d4570;
-  --text:#e8eaf6;--text2:#9ea3c0;--text3:#5c6285;
-  --accent:#7c3aed;--accent-bg:#1e1535;--accent-light:#a78bfa;
+  --bg:#12171f;--surface:#1b222c;--surface2:#222b37;--surface3:#2b3644;
+  --border:#2c3745;--border2:#3a4757;
+  --text:#e9eef5;--text2:#9aa8b9;--text3:#617083;
+  --accent:#fa7006;--accent-bg:#2e1a0c;--accent-light:#ffa05c;
   --success:#22c55e;--success-bg:#0d2818;--success-light:#86efac;
-  --danger:#ef4444;--danger-bg:#2d1515;--danger-light:#fca5a5;
-  --warning:#f59e0b;--warning-bg:#2d1f0a;--warning-light:#fcd34d;
-  --pro:#8b5cf6;--pro-bg:#1c1535;--pro-light:#c4b5fd;
-  --radius:8px;
+  --danger:#ef4444;--danger-bg:#2d1519;--danger-light:#fca5a5;
+  --warning:#f5c400;--warning-bg:#2b2406;--warning-light:#ffd84d;
+  --pro:#0dccf2;--pro-bg:#0b2a33;--pro-light:#7fe3f7;
+  --blue:#0dccf2;--teal:#69ac9a;--brand:linear-gradient(135deg,#fa7006 0%,#69ac9a 55%,#0dccf2 100%);
+  --radius:6px;
 }
 body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5}
 
@@ -29,8 +30,8 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .logo svg{width:20px;height:20px;color:var(--accent-light)}
 .header-right{display:flex;align-items:center;gap:10px}
 .badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;letter-spacing:0.3px}
-.badge-admin{background:var(--pro-bg);color:var(--pro-light);border:1px solid #3d2d6b}
-.badge-user{background:var(--accent-bg);color:var(--accent-light);border:1px solid #3d2878}
+.badge-admin{background:var(--pro-bg);color:var(--pro-light);border:1px solid #17606f}
+.badge-user{background:var(--accent-bg);color:var(--accent-light);border:1px solid #6b3a14}
 .badge-creator{background:var(--success-bg);color:var(--success-light);border:1px solid #1a4d30}
 .offline-dot{width:8px;height:8px;border-radius:50%;background:var(--success);display:inline-block;margin-right:4px}
 .offline-label{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:4px}
@@ -44,9 +45,9 @@ body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:v
 .login-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 20px;cursor:pointer;transition:border-color .15s,background .15s;text-align:center}
 .login-card:hover{border-color:var(--border2);background:var(--surface2)}
 .login-icon{width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:24px}
-.icon-admin{background:var(--pro-bg);border:1px solid #3d2d6b}
-.icon-creator{background:var(--success-bg);border:1px solid #1a4d30}
-.icon-user{background:var(--accent-bg);border:1px solid #3d2878}
+.icon-admin{background:var(--pro-bg);border:1px solid #17606f}
+.icon-creator{background:#0f2622;border:1px solid #2c5a52}
+.icon-user{background:var(--accent-bg);border:1px solid #6b3a14}
 .login-card-title{font-size:15px;font-weight:600;margin-bottom:6px}
 .login-card-desc{font-size:12px;color:var(--text2);line-height:1.5}
 
@@ -84,7 +85,7 @@ textarea{resize:vertical;min-height:60px}
 .btn:hover{background:var(--surface3)}
 .btn:active{transform:scale(.98)}
 .btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}
-.btn-primary:hover{background:#6d28d9;border-color:#6d28d9}
+.btn-primary:hover{background:#d96000;border-color:#d96000}
 .btn-danger{background:var(--danger-bg);color:var(--danger-light);border-color:#4d1f1f}
 .btn-danger:hover{background:#3d1515}
 .btn-sm{padding:5px 10px;font-size:12px}
@@ -104,7 +105,7 @@ textarea{resize:vertical;min-height:60px}
 /* Questions */
 .q-item{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:10px}
 .q-header{display:flex;align-items:center;gap:8px;margin-bottom:12px}
-.q-num{font-size:11px;font-weight:600;color:var(--accent-light);background:var(--accent-bg);padding:2px 9px;border-radius:20px;border:1px solid #3d2878}
+.q-num{font-size:11px;font-weight:600;color:var(--accent-light);background:var(--accent-bg);padding:2px 9px;border-radius:20px;border:1px solid #6b3a14}
 .q-remove{margin-left:auto;background:none;border:none;cursor:pointer;color:var(--text3);padding:4px;line-height:1;transition:color .12s;display:flex;align-items:center}
 .q-remove:hover{color:var(--danger-light)}
 .q-remove svg{width:16px;height:16px}
@@ -153,11 +154,11 @@ textarea{resize:vertical;min-height:60px}
 .attempt-score{font-weight:700}
 
 /* AI */
-.ai-section{background:var(--pro-bg);border:1px solid #3d2d6b;border-radius:8px;padding:14px;margin-bottom:14px}
+.ai-section{background:var(--pro-bg);border:1px solid #17606f;border-radius:8px;padding:14px;margin-bottom:14px}
 .ai-section label{color:var(--pro-light)}
 .ai-row{display:flex;gap:8px;margin-top:8px}
 .ai-row input{flex:1}
-.ai-loader{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--accent-bg);border-radius:6px;font-size:12px;color:var(--accent-light);margin-top:8px;border:1px solid #3d2878}
+.ai-loader{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--accent-bg);border-radius:6px;font-size:12px;color:var(--accent-light);margin-top:8px;border:1px solid #6b3a14}
 .spinner{width:14px;height:14px;border:2px solid var(--accent-light);border-top-color:transparent;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
 
@@ -211,6 +212,88 @@ textarea{resize:vertical;min-height:60px}
 .section-head p{font-size:12px;color:var(--text2)}
 .toast{position:fixed;bottom:24px;right:20px;background:var(--success-bg);border:1px solid var(--success);color:var(--success-light);padding:10px 16px;border-radius:8px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:8px;z-index:200;transition:opacity .3s;box-shadow:0 4px 20px rgba(0,0,0,.4)}
 .toast svg{width:15px;height:15px}
+
+/* ═══ Thème « tableau de bord industriel » ═══ */
+body{background:var(--bg);background-image:linear-gradient(rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.022) 1px,transparent 1px);background-size:28px 28px;background-attachment:fixed;font-family:'Inter','Segoe UI',system-ui,-apple-system,sans-serif;letter-spacing:.005em}
+.main{max-width:980px}
+.header{background:#161c25;border-bottom:1px solid var(--border);box-shadow:0 2px 14px rgba(0,0,0,.35);padding:10px 20px}
+.header::before{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--accent),var(--blue) 55%,transparent)}
+.logo{font-size:15px;font-weight:700;letter-spacing:.2px;text-transform:uppercase}
+.logo>svg{width:34px;height:34px;padding:7px;border-radius:6px;background:var(--accent);color:#fff;box-shadow:0 0 14px rgba(250,112,6,.45)}
+.badge{border-radius:4px;text-transform:uppercase;font-size:10px;letter-spacing:.8px}
+.apikey-btn,.cloud-btn{border-radius:5px}
+.login-hero{padding-top:36px}
+.login-title{font-size:28px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+.login-sub{color:var(--text2)}
+.login-card{border-radius:8px;background:linear-gradient(180deg,var(--surface2),var(--surface));position:relative;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.login-card::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--accent)}
+.login-card:nth-child(2)::before{background:var(--blue)}
+.login-card:nth-child(3)::before{background:var(--teal)}
+.login-card:hover{transform:translateY(-2px);border-color:var(--accent);box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 0 1px rgba(250,112,6,.25)}
+.login-card{transition:transform .15s,border-color .15s,box-shadow .15s}
+.login-icon{border-radius:10px;box-shadow:0 0 16px rgba(255,255,255,.04) inset}
+.tabs{background:#161c25;border-radius:6px;padding:4px;box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.tab{border-radius:4px;text-transform:uppercase;font-size:12px;letter-spacing:.6px;font-weight:600}
+.tab:hover{color:var(--text)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 0 12px rgba(250,112,6,.35)}
+.card{border-radius:8px;background:linear-gradient(180deg,#202935,var(--surface));box-shadow:0 6px 18px rgba(0,0,0,.28);border-color:var(--border)}
+.card-title{color:var(--text);font-size:12px;letter-spacing:1px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.card-title svg{color:var(--accent-light)}
+.section-head h2{font-size:19px;font-weight:800;text-transform:uppercase;letter-spacing:.5px}
+label{text-transform:uppercase;font-size:10.5px;letter-spacing:.7px;color:var(--text2)}
+input[type=text],input[type=password],textarea,select{background:#161c25;border-color:var(--border2);border-radius:5px}
+input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(250,112,6,.18)}
+.btn{border-radius:5px;background:var(--surface3);font-weight:500}
+.btn:hover{border-color:var(--accent);background:#324052}
+.btn-primary{background:var(--accent);border-color:var(--accent);box-shadow:0 2px 10px rgba(250,112,6,.3)}
+.btn-primary:hover{background:#ff8526;border-color:#ff8526}
+.btn-danger:hover{background:#3d181d;border-color:var(--danger)}
+.q-item,.corr-item,.attempt-row,.stat-card,.detail-q{background:#1d2530;border-radius:6px}
+.q-item{border-left:3px solid var(--accent)}
+.q-num{border-radius:4px;background:var(--accent-bg);color:var(--accent-light)}
+.progress-bar{height:8px;background:#161c25;border-radius:4px}
+.progress-fill{background:linear-gradient(90deg,var(--blue),#69ac9a);border-radius:4px;box-shadow:0 0 10px rgba(13,204,242,.5)}
+.quiz-opt{background:#1d2530;border-radius:6px;padding:13px 16px}
+.quiz-opt:hover:not(.locked){border-color:var(--blue);background:#0d2c36;transform:translateX(2px)}
+.quiz-opt.selected{border-color:var(--blue);background:#0d2c36;box-shadow:0 0 0 1px var(--blue)}
+.quiz-opt{transition:all .12s}
+.opt-circle{background:#161c25}
+.stat-card{border-top:3px solid var(--blue);padding:18px 14px}
+.stat-card:nth-child(2){border-top-color:var(--accent)}
+.stat-card:nth-child(3){border-top-color:var(--teal)}
+.stat-val{font-size:30px;font-weight:800}
+.stat-lbl{letter-spacing:1px}
+.c-blue{color:#5fe0f7}
+.ai-section{background:linear-gradient(180deg,#0c2a34,#0a222b);border-color:#17606f;border-radius:6px}
+.ai-loader{background:var(--accent-bg);border-color:#6b3a14}
+.result-circle{box-shadow:0 0 28px currentColor;border-width:5px!important}
+.modal{border-radius:8px;background:linear-gradient(180deg,#222b37,var(--surface));box-shadow:0 20px 60px rgba(0,0,0,.6);border-top:3px solid var(--accent)}
+.modal-overlay{background:rgba(6,9,13,.78);backdrop-filter:blur(4px)}
+.choice-card,.tag{border-radius:6px}
+.toast{border-radius:6px;box-shadow:0 8px 24px rgba(0,0,0,.5);border-left:4px solid var(--success)}
+.qcm-owner-group summary .grp-name{text-transform:uppercase;font-size:12px;letter-spacing:.6px}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-track{background:#12171f}::-webkit-scrollbar-thumb{background:#33404f;border-radius:5px;border:2px solid #12171f}::-webkit-scrollbar-thumb:hover{background:var(--accent)}
+
+/* ═══ Palette logo Fortil : orange → cyan ═══ */
+body{background-image:radial-gradient(900px 500px at 100% 0%,rgba(13,204,242,.10),transparent 60%),radial-gradient(900px 500px at 0% 100%,rgba(250,112,6,.10),transparent 60%),linear-gradient(rgba(255,255,255,.02) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.02) 1px,transparent 1px);background-size:auto,auto,28px 28px,28px 28px}
+.header::before{background:linear-gradient(90deg,#fa7006,#69ac9a 55%,#0dccf2)}
+.logo>svg{background:linear-gradient(45deg,#fa7006,#0dccf2);box-shadow:0 0 16px rgba(13,204,242,.35)}
+.login-title{background:linear-gradient(90deg,#ff9a3d 0%,#ffb27a 30%,#9fe3f2 70%,#0dccf2 100%);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-fill-color:transparent}
+.login-card::before{background:linear-gradient(90deg,#fa7006,#ffa05c)}
+.login-card:nth-child(2)::before{background:linear-gradient(90deg,#0dccf2,#7fe3f7)}
+.login-card:nth-child(3)::before{background:linear-gradient(90deg,#69ac9a,#a9d4c8)}
+.tab.active{background:linear-gradient(45deg,#fa7006,#ff9a3d);color:#1a0d00;border-color:transparent}
+.btn-primary{background:linear-gradient(45deg,#fa7006,#ff9a3d);border-color:#fa7006;color:#1a0d00;font-weight:700}
+.btn-primary:hover{background:linear-gradient(45deg,#ff8526,#ffae5c);border-color:#ff8526}
+.progress-fill{background:linear-gradient(90deg,#fa7006,#69ac9a 55%,#0dccf2);box-shadow:0 0 10px rgba(13,204,242,.4)}
+.modal{border-top:3px solid transparent;border-image:linear-gradient(90deg,#fa7006,#0dccf2) 1}
+.card-title svg{color:#0dccf2}
+.q-item{border-left-color:#0dccf2}
+.stat-card:nth-child(1){border-top-color:#0dccf2}
+.stat-card:nth-child(2){border-top-color:#fa7006}
+.stat-card:nth-child(3){border-top-color:#69ac9a}
+.input:focus,input[type=text]:focus,input[type=password]:focus,textarea:focus,select:focus{border-color:#0dccf2;box-shadow:0 0 0 3px rgba(13,204,242,.18)}
+.quiz-opt:hover:not(.locked){border-color:#0dccf2}
 @media(max-width:760px){
   .login-wrap{grid-template-columns:1fr}
 }
@@ -277,21 +360,21 @@ textarea{resize:vertical;min-height:60px}
   <div class="login-wrap">
     <div class="login-card" onclick="openPasswordModal('admin')">
       <div class="login-icon icon-admin">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#7fe3f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
       </div>
       <div class="login-card-title">Administrateur</div>
       <div class="login-card-desc">Créer et configurer des QCM, consulter les statistiques et les corrigés. Accès protégé par mot de passe.</div>
     </div>
     <div class="login-card" onclick="openProfileLoginModal('creator')">
       <div class="login-icon icon-creator">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#86efac" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#a9d4c8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
       </div>
       <div class="login-card-title">Créateur</div>
       <div class="login-card-desc">Répondre aux QCM et consulter vos résultats, avec en plus la création et la gestion de vos propres QCM. Connexion avec identifiant + mot de passe.</div>
     </div>
     <div class="login-card" onclick="openProfileLoginModal('user')">
       <div class="login-icon icon-user">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        <svg viewBox="0 0 24 24" fill="none" stroke="#ffa05c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:26px;height:26px"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       </div>
       <div class="login-card-title">Utilisateur</div>
       <div class="login-card-desc">Répondre aux QCM qui vous ont été attribués et consulter vos résultats. Connexion avec identifiant + mot de passe.</div>
@@ -694,7 +777,7 @@ textarea{resize:vertical;min-height:60px}
 
         <!-- Option 1 -->
         <div class="choice-card" onclick="chooseLaunch()" id="choiceLocal">
-          <div class="choice-icon" style="background:var(--accent-bg);border:1px solid #3d2878">
+          <div class="choice-icon" style="background:var(--accent-bg);border:1px solid #6b3a14">
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><polygon points="5 3 19 12 5 21 5 3"/></svg>
           </div>
           <div>
@@ -705,7 +788,7 @@ textarea{resize:vertical;min-height:60px}
 
         <!-- Option 2 -->
         <div class="choice-card" onclick="chooseLink()" id="choiceRemote" style="margin-bottom:0">
-          <div class="choice-icon" style="background:var(--pro-bg);border:1px solid #3d2d6b">
+          <div class="choice-icon" style="background:var(--pro-bg);border:1px solid #17606f">
             <svg viewBox="0 0 24 24" fill="none" stroke="var(--pro-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </div>
           <div>
@@ -1836,7 +1919,7 @@ function renderCorrige() {
                 style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer;background:var(--surface2);gap:10px;user-select:none"
                 onmouseover="this.style.background='var(--surface3)'" onmouseout="this.style.background='var(--surface2)'">
                 <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-                  <span style="font-size:11px;font-weight:700;color:var(--accent-light);background:var(--accent-bg);padding:1px 8px;border-radius:20px;border:1px solid #3d2878;flex-shrink:0">Q${i+1}</span>
+                  <span style="font-size:11px;font-weight:700;color:var(--accent-light);background:var(--accent-bg);padding:1px 8px;border-radius:20px;border:1px solid #6b3a14;flex-shrink:0">Q${i+1}</span>
                   <span style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${q.text}</span>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -2695,7 +2778,7 @@ async function finishQuiz() {
     const statusEl = $('remoteResultStatus');
     if (statusEl) {
       statusEl.textContent = '⏳ Envoi des résultats en cours…';
-      statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--accent-bg);color:var(--accent-light);border:1px solid #3d2878;margin-top:8px`;
+      statusEl.style.cssText = `font-size:13px;padding:10px 16px;border-radius:8px;background:var(--accent-bg);color:var(--accent-light);border:1px solid #6b3a14;margin-top:8px`;
     }
 
     try {
@@ -2779,7 +2862,7 @@ function renderDetailModal(a) {
       return `
       <div class="detail-q">
         <div style="display:flex;align-items:flex-start;gap:8px;margin-bottom:10px">
-          <span style="font-size:11px;font-weight:700;color:var(--accent-light);background:var(--accent-bg);padding:1px 8px;border-radius:20px;border:1px solid #3d2878;flex-shrink:0;margin-top:1px">Q${i+1}</span>
+          <span style="font-size:11px;font-weight:700;color:var(--accent-light);background:var(--accent-bg);padding:1px 8px;border-radius:20px;border:1px solid #6b3a14;flex-shrink:0;margin-top:1px">Q${i+1}</span>
           <div style="display:flex;align-items:center;gap:8px;flex:1;justify-content:space-between;flex-wrap:wrap">
             <span class="detail-q-text" style="margin:0">${d.text}</span>
             ${answered
